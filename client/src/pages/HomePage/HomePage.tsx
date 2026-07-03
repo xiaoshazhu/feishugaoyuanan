@@ -217,15 +217,22 @@ export default function HomePage() {
         setBootstrapConfig(res.data);
         if (res.data.infoConfig) {
           const cfg = res.data.infoConfig;
+          const matchedKeywords = cfg['智能策划偏好'] || cfg['智能策划偏好关键词'] || '';
           setState((prev) => ({
             ...prev,
             intent: {
               purpose: cfg['主办方核心目的'] || '',
               outcome: cfg['希望达成的效果'] || '',
               resources: cfg['投入资源与边界'] || '',
-              keywords: cfg['智能策划偏好关键词'] || ''
+              keywords: matchedKeywords
             }
           }));
+          setIntentInput({
+            purpose: cfg['主办方核心目的'] || '',
+            outcome: cfg['希望达成的效果'] || '',
+            resources: cfg['投入资源与边界'] || '',
+            keywords: matchedKeywords
+          });
         }
       }
     }).catch((err) => {
@@ -472,6 +479,43 @@ ${dinner}
     }));
   };
 
+  const [isSavingIntent, setIsSavingIntent] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
+
+  const handleIntentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingIntent(true);
+    setSaveStatus("正在保存并刷新中...");
+    
+    // 映射回后端对应的中文字段
+    const payload = {
+      '主办方核心目的': intentInput.purpose,
+      '希望达成的效果': intentInput.outcome,
+      '投入资源与边界': intentInput.resources,
+      '智能策划偏好': intentInput.keywords,
+    };
+
+    axiosForBackend({
+      url: "/api/huizhi/info-config",
+      method: "PUT",
+      data: payload
+    }).then((res) => {
+      if (res.data?.success) {
+        setSaveStatus("保存成功！已同步至飞书多维表格。");
+        // 重新拉取最新的数据
+        refreshAllData();
+      } else {
+        setSaveStatus("保存失败，请稍后重试。");
+      }
+    }).catch((err) => {
+      console.error("Failed to save intent config:", err);
+      setSaveStatus("保存时出错，请检查网络或配置。");
+    }).finally(() => {
+      setIsSavingIntent(false);
+      setTimeout(() => setSaveStatus(""), 4000);
+    });
+  };
+
   const copyPublishMessage = async () => {
     const message = buildPublishMessage(state.publish);
     try {
@@ -572,8 +616,8 @@ ${dinner}
         <section className="tabs" aria-label="视图切换">
           <button className={`tab ${activeView === 'ideas' ? 'active' : ''}`} onClick={() => changeView("ideas")}>点子广场</button>
           <button className={`tab ${activeView === 'info' ? 'active' : ''}`} onClick={() => changeView("info")}>活动信息</button>
+          <button className={`tab ${activeView === 'intent' ? 'active' : ''}`} onClick={() => changeView("intent")}>发起人想法</button>
           <button className={`tab ${activeView === 'submit' ? 'active' : ''}`} onClick={() => changeView("submit")}>投放想法</button>
-          <button className={`tab ${activeView === 'publish' ? 'active' : ''}`} onClick={() => changeView("publish")}>发布入口</button>
           <button className={`tab ${activeView === 'leaderboard' ? 'active' : ''}`} onClick={() => changeView("leaderboard")}>积分榜</button>
         </section>
 
@@ -642,36 +686,7 @@ ${dinner}
               )}
             </div>
 
-            {/* 新增：发起企业及发起人想法区域 */}
-            {bootstrapConfig.infoConfig && (
-              <div className="panel sponsor-section" style={{ marginTop: '24px', padding: '24px' }}>
-                <span className="mini-label">共创说明</span>
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>联合发起企业及共创目的</h2>
-                <div className="sponsor-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-                  <div className="purpose-box" style={{ background: 'var(--accent)', padding: '20px', borderRadius: '4px' }}>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', color: 'var(--primary)' }}>共创目的与期待</h3>
-                    <p style={{ fontSize: '0.9rem', marginBottom: '8px', lineHeight: '1.6' }}><strong>联合发起目的：</strong>{bootstrapConfig.infoConfig.主办方核心目的}</p>
-                    <p style={{ fontSize: '0.9rem', marginBottom: '8px', lineHeight: '1.6' }}><strong>希望达成效果：</strong>{bootstrapConfig.infoConfig.希望达成的效果}</p>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}><strong>资源与边界限制：</strong>{bootstrapConfig.infoConfig.投入资源与边界}</p>
-                  </div>
-                  <div className="sponsors-box" style={{ background: 'var(--accent)', padding: '20px', borderRadius: '4px' }}>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', color: 'var(--primary)' }}>三方联合发起人职责</h3>
-                    <ul style={{ listStyle: 'none', padding: 0 }}>
-                      {bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0 ? (
-                        bootstrapConfig.sponsors.map((item: any, idx: number) => (
-                          <li key={idx} style={{ fontSize: '0.9rem', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--border)', lineHeight: '1.6' }}>
-                            <strong style={{ color: 'var(--foreground)' }}>{item.企业名称}：</strong>
-                            <span>{item.企业描述}</span>
-                          </li>
-                        ))
-                      ) : (
-                        <li style={{ fontSize: '0.9rem' }}>暂无发起企业职责配置</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </section>
         )}
 
@@ -873,75 +888,117 @@ ${dinner}
           </section>
         )}
 
-        {/* View: publish */}
-        {activeView === "publish" && (
-          <section id="view-publish" className="view active">
+        {/* View: intent (发起人想法) */}
+        {activeView === "intent" && (
+          <section id="view-intent" className="view active">
             <div className="section-head">
               <div>
-                <h2>发布入口</h2>
-                <p>把汇智箱发给参与人前，先选择合适的发布方式，并生成飞书群公告文案。</p>
+                <h2>发起人想法</h2>
+                <p>由高原安、字节跳动、海科科技共同发起，所有投稿都围绕这里的目标自动匹配。</p>
               </div>
             </div>
-            <div className="publish-grid">
-              <article className="panel publish-card">
-                <span className="mini-label">推荐正式版</span>
-                <h3>部署成统一网址</h3>
-                <p>适合正式活动。参与人通过同一个 HTTPS 链接进入，后续可接飞书多维表格或数据库集中汇总投稿、点赞、评论和积分。</p>
-              </article>
-              <article className="panel publish-card">
-                <span className="mini-label">临时内测</span>
-                <h3>办公室局域网访问</h3>
-                <p>适合同一网络下短时间试用。需要你的电脑保持开机并运行本地服务，链接形如：<strong>http://你的电脑IP:5178/feishu-entry.html</strong></p>
-              </article>
-              <article className="panel publish-card">
-                <span className="mini-label">仅演示</span>
-                <h3>发送文件夹</h3>
-                <p>适合让别人看界面。每个人的数据保存在自己浏览器里，不能自动汇总，不建议用于正式征集。</p>
-              </article>
-            </div>
-            <div className="publish-layout">
-              <form id="publishForm" className="panel" onSubmit={handlePublishSubmit}>
-                <h2>生成飞书邀请文案</h2>
-                <label>
-                  正式入口链接
-                  <input
-                    id="publishUrl"
-                    placeholder="例如：https://your-domain.com/feishu-entry.html"
-                    value={publishInput.publishUrl}
-                    onChange={(e) => setPublishInput((prev) => ({ ...prev, publishUrl: e.target.value }))}
+
+            <form onSubmit={handleIntentSubmit} className="panel" style={{ padding: '24px', marginBottom: '24px' }}>
+              <div className="intent-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '20px' }}>
+                
+                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>主办方核心目的</label>
+                  <textarea
+                    rows={6}
+                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
+                    value={intentInput.purpose}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, purpose: e.target.value }))}
+                    placeholder="请输入主办方核心目的..."
                   />
-                </label>
-                <label>
-                  AIAA晚餐报名链接
-                  <input
-                    id="dinnerUrl"
-                    placeholder="可选：飞书表单/多维表格报名链接"
-                    value={publishInput.dinnerUrl}
-                    onChange={(e) => setPublishInput((prev) => ({ ...prev, dinnerUrl: e.target.value }))}
+                </div>
+
+                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>希望达成的效果</label>
+                  <textarea
+                    rows={6}
+                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
+                    value={intentInput.outcome}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, outcome: e.target.value }))}
+                    placeholder="请输入希望达成的效果..."
                   />
-                </label>
-                <label>
-                  发布对象
-                  <select
-                    id="audienceType"
-                    value={publishInput.audienceType}
-                    onChange={(e) => setPublishInput((prev) => ({ ...prev, audienceType: e.target.value }))}
-                  >
-                    <option value="内部筹备成员">内部筹备成员</option>
-                    <option value="企业主与高管">企业主与高管</option>
-                    <option value="合作伙伴">合作伙伴</option>
-                  </select>
-                </label>
-                <button className="primary" type="submit">生成文案</button>
-              </form>
-              <article className="panel export-panel">
-                <h2>飞书群公告文案</h2>
-                <textarea id="publishMessage" rows={14} readOnly value={buildPublishMessage(state.publish)} />
-                <button id="copyPublishBtn" className="secondary" type="button" onClick={copyPublishMessage}>
-                  复制文案
+                </div>
+
+                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>投入资源与边界</label>
+                  <textarea
+                    rows={6}
+                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
+                    value={intentInput.resources}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, resources: e.target.value }))}
+                    placeholder="请输入投入资源与边界条件..."
+                  />
+                </div>
+
+                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>智能策划偏好关键词</label>
+                  <textarea
+                    rows={6}
+                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
+                    value={intentInput.keywords}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, keywords: e.target.value }))}
+                    placeholder="请输入智能策划偏好关键词，多个词之间用逗号分隔..."
+                  />
+                </div>
+
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button
+                  type="submit"
+                  disabled={isSavingIntent}
+                  className="primary"
+                  style={{
+                    backgroundColor: '#076046',
+                    color: '#fff',
+                    padding: '10px 20px',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: isSavingIntent ? 'not-allowed' : 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {isSavingIntent ? '正在保存...' : '保存发起人想法并刷新智能策划'}
                 </button>
-                {copyStatus && <p id="copyStatus" className="muted">{copyStatus}</p>}
-              </article>
+                {saveStatus && (
+                  <span style={{ fontSize: '0.9rem', color: saveStatus.includes('成功') ? '#10b981' : '#f59e0b', fontWeight: '500' }}>
+                    {saveStatus}
+                  </span>
+                )}
+              </div>
+            </form>
+
+            {/* 联合发起人职责展示 */}
+            <div className="sponsor-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+              {bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0 ? (
+                bootstrapConfig.sponsors.map((item: any, idx: number) => (
+                  <div key={idx} className="panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>{item.企业名称}</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>{item.企业描述}</p>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="panel" style={{ padding: '20px' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>高原安</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>总发起、客户经营、企业管理实战案例、AIAA晚餐转化。</p>
+                  </div>
+                  <div className="panel" style={{ padding: '20px' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>字节跳动</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>飞书站台、高级分享、数字化应用未来设想、原厂背书。</p>
+                  </div>
+                  <div className="panel" style={{ padding: '20px' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>海科科技</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>活动策划执行、客户邀约、现场互动、内容包装与传播。</p>
+                  </div>
+                </>
+              )}
             </div>
           </section>
         )}

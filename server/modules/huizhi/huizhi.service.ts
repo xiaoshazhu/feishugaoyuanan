@@ -444,5 +444,37 @@ export class HuizhiService {
   async toggleFullPlan(id: string, fullPlan: boolean): Promise<boolean> {
     return true;
   }
+
+  /**
+   * 功能描述：更新信息配置表中的发起人想法及策划关键字
+   */
+  async updateInfoConfig(data: any): Promise<boolean> {
+    if (!this.isFeishuConfigured()) {
+      return true;
+    }
+    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
+    try {
+      // 现获取已有的配置记录ID以进行覆盖更新
+      const records = await this.feishuService.getRecords(appToken, TABLES.infoConfig);
+      const recordId = records?.[0]?.record_id;
+      if (!recordId) {
+        this.logger.error('未找到可更新的信息配置记录');
+        return false;
+      }
+      
+      const fields = {
+        '主办方核心目的': String(data.主办方核心目的 || '').trim(),
+        '希望达成的效果': String(data.希望达成的效果 || '').trim(),
+        '投入资源与边界': String(data.投入资源与边界 || '').trim(),
+        '智能策划偏好': String(data.智能策划偏好 || '').trim(),
+      };
+      
+      const result = await this.feishuService.updateRecord(appToken, TABLES.infoConfig, recordId, fields);
+      return !!result;
+    } catch (error) {
+      this.logger.error('更新发起人想法配置失败', error.message);
+      return false;
+    }
+  }
 }
 

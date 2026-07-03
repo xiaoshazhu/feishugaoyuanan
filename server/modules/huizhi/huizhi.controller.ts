@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param } from '@nestjs/common';
 import { HuizhiService } from './huizhi.service';
 
 /**
@@ -93,5 +93,14 @@ export class HuizhiController {
   @Get('leaderboard')
   async getLeaderboard() {
     return await this.huizhiService.getLeaderboard();
+  }
+
+  /**
+   * 功能描述：更新发起人想法及智能策划配置信息
+   */
+  @Put('info-config')
+  async updateInfoConfig(@Body() body: any) {
+    const success = await this.huizhiService.updateInfoConfig(body);
+    return { success };
   }
 }
