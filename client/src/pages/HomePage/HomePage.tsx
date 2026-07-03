@@ -1171,32 +1171,42 @@ ${dinner}
               </div>
             </div>
 
-            {/* 共同发起企业职责横幅 */}
-            <div className="intent-sponsors-top" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px', background: 'var(--accent, rgba(59, 130, 246, 0.02))', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            {/* 共同发起企业职责极简列表 */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px dashed var(--border)' }}>
               {bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0 ? (
                 bootstrapConfig.sponsors.map((item: any, idx: number) => (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      🏢 {item.企业名称}
-                    </h4>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)', lineHeight: '1.5' }}>
+                  <div key={idx} style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
+                      {item.企业名称}
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>
                       {item.企业描述}
                     </p>
                   </div>
                 ))
               ) : (
                 <>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 'bold', color: 'var(--primary)' }}>🏢 高原安</h4>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)', lineHeight: '1.5' }}>总发起、客户经营、企业管理实战案例、AIAA晚餐转化。</p>
+                  <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
+                      高原安
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>总发起、客户经营、企业管理实战案例、AIAA晚餐转化。</p>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 'bold', color: 'var(--primary)' }}>🏢 字节跳动</h4>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)', lineHeight: '1.5' }}>飞书站台、高级分享、数字化应用未来设想、原厂背书。</p>
+                  <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
+                      字节跳动
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>飞书站台、高级分享、数字化应用未来设想、原厂背书。</p>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 'bold', color: 'var(--primary)' }}>🏢 海科科技</h4>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)', lineHeight: '1.5' }}>活动策划执行、客户邀约、现场互动、内容包装与传播。</p>
+                  <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
+                      海科科技
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>活动策划执行、客户邀约、现场互动、内容包装与传播。</p>
                   </div>
                 </>
               )}
