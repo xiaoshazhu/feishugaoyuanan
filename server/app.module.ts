@@ -6,10 +6,14 @@ import { GlobalExceptionFilter } from './common/filters/exception.filter';
 import { HuizhiModule } from './modules/huizhi/huizhi.module';
 import { ViewModule } from './modules/view/view.module';
 
+const platformModules = process.env.SUDA_DATABASE_URL
+  ? [PlatformModule.forRoot()]
+  : [];
+
 @Module({
   imports: [
-    // 平台 Module，提供平台能力
-    PlatformModule.forRoot(),
+    // 平台 Module，提供飞书妙搭平台能力；本地没有数据库环境时跳过，便于开发预览。
+    ...platformModules,
     // ====== @route-section: business-modules START ======
     // Place all business modules here.Do NOT add fallback modules here.
     HuizhiModule,
