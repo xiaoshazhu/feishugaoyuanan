@@ -172,8 +172,12 @@ export class HuizhiService {
           }
         }
 
-        // 筛选和统计此点子相关的互动
+        // 筛选和统计此点子相关的互动 (排除被软删除的记录)
         const relatedInteractions = interactionRecords.filter((inter) => {
+          const isDeleted = inter.fields['是否删除'] === true || String(inter.fields['是否删除'] || '') === '是';
+          if (isDeleted) {
+            return false;
+          }
           const rawLink = inter.fields['关联点子'];
           let linkedIds: string[] = [];
           if (Array.isArray(rawLink)) {
@@ -361,39 +365,77 @@ export class HuizhiService {
   /**
    * 功能描述：点赞（写入互动中心）
    */
-  async voteIdea(id: string, author?: string): Promise<boolean> {
+  async voteIdea(id: string, author?: string, department?: string): Promise<boolean> {
     if (!this.isFeishuConfigured()) {
       const idx = this.memoryIdeas.findIndex((x) => x.id === id);
       if (idx !== -1) {
-        this.memoryIdeas[idx].votes += 1;
+        // 在内存模式下，通过一个 voted 临时状态切换点赞数
+        const isVoted = (this.memoryIdeas[idx] as any).voted;
+        this.memoryIdeas[idx].votes = Math.max(0, this.memoryIdeas[idx].votes + (isVoted ? -1 : 1));
+        (this.memoryIdeas[idx] as any).voted = !isVoted;
         return true;
       }
       return false;
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const voterName = author || '匿名';
+    const voterName = (author || '匿名').trim();
+    const deptName = (department || '').trim();
+
     try {
+      // 1. 获取积分规则变动分数
       const rulesRecords = await this.feishuService.getRecords(appToken, TABLES.rules);
       const voteRule = rulesRecords.find((x) => x.fields['积分规则'] === '点赞');
       const scoreDiff = voteRule ? Number(voteRule.fields['分数变动']) : 0.2;
 
-      // 为避免 UserFieldConvFail，优先查找存在的用户
-      const matchedUser = await this.findFeishuUserByName(voterName);
-      const matchedDefault = await this.findFeishuUserByName('王迅');
+      // 2. 获取现存的互动记录进行软删除比对
+      const records = await this.feishuService.getRecords(appToken, TABLES.interactions);
+      
+      const matchedRecord = records.find((record) => {
+        const fields = record.fields;
+        const op = String(fields['操作'] || '');
+        const user = String(fields['用户'] || '').trim();
+        const dept = String(fields['所属单位'] || '').trim();
+        const deleted = fields['是否删除'] === true || String(fields['是否删除'] || '') === '是';
 
-      const fields: any = {
-        '关联点子': [id],
-        '操作': '点赞',
-        '积分变动': scoreDiff
-      };
+        // 解析关联点子 ID
+        const rawLink = fields['关联点子'];
+        let linkedIds: string[] = [];
+        if (Array.isArray(rawLink)) {
+          if (rawLink.length > 0 && typeof rawLink[0] === 'object' && (rawLink[0] as any).record_ids) {
+            linkedIds = (rawLink[0] as any).record_ids;
+          } else {
+            linkedIds = rawLink.map(x => typeof x === 'string' ? x : (x?.id || ''));
+          }
+        }
 
-      fields['用户'] = voterName;
+        return op === '点赞' && user === voterName && dept === deptName && linkedIds.includes(id) && !deleted;
+      });
 
-      const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);
-      return !!result;
+      if (matchedRecord) {
+        this.logger.log(`检测到重复点赞记录，进行【取消点赞】操作: recordId=${matchedRecord.record_id}`);
+        // 3. 将是否删除设为 true
+        const updateFields = {
+          '是否删除': '是'
+        };
+        const result = await this.feishuService.updateRecord(appToken, TABLES.interactions, matchedRecord.record_id, updateFields);
+        return !!result;
+      } else {
+        this.logger.log(`进行【点赞】操作: user=${voterName}, dept=${deptName}`);
+        // 4. 新写入点赞记录
+        const fields: any = {
+          '关联点子': [id],
+          '操作': '点赞',
+          '用户': voterName,
+          '所属单位': deptName,
+          '是否删除': '否'
+        };
+
+        const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);
+        return !!result;
+      }
     } catch (error) {
-      this.logger.error('点赞记录插入失败', error.message);
+      this.logger.error('点赞/取消点赞操作失败', error.message);
       return false;
     }
   }
@@ -401,7 +443,7 @@ export class HuizhiService {
   /**
    * 功能描述：添加评论（写入互动中心）
    */
-  async addComment(id: string, commentText: string, author?: string): Promise<string[]> {
+  async addComment(id: string, commentText: string, author?: string, department?: string): Promise<string[]> {
     if (!commentText.trim()) return [];
 
     if (!this.isFeishuConfigured()) {
@@ -415,14 +457,16 @@ export class HuizhiService {
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const commentAuthor = author || '匿名';
+    const commentAuthor = (author || '匿名').trim();
+    const deptName = (department || '').trim();
     try {
       const fields: any = {
         '关联点子': [id],
         '操作': '评论',
         '评论内容': commentText.trim(),
-        '积分变动': 0,
-        '用户': commentAuthor
+        '用户': commentAuthor,
+        '所属单位': deptName,
+        '是否删除': '否'
       };
 
       const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);

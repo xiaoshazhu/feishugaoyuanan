@@ -42,8 +42,8 @@ export class HuizhiController {
    * @return {Promise<{ success: boolean }>} 是否点赞成功
    */
   @Post('ideas/:id/vote')
-  async voteIdea(@Param('id') id: string, @Body() body: { author?: string }) {
-    const success = await this.huizhiService.voteIdea(id, body.author);
+  async voteIdea(@Param('id') id: string, @Body() body: { author?: string; department?: string }) {
+    const success = await this.huizhiService.voteIdea(id, body.author, body.department);
     return { success };
   }
 
@@ -56,9 +56,9 @@ export class HuizhiController {
   @Post('ideas/:id/comment')
   async addComment(
     @Param('id') id: string,
-    @Body() body: { commentText: string; author?: string },
+    @Body() body: { commentText: string; author?: string; department?: string },
   ) {
-    const comments = await this.huizhiService.addComment(id, body.commentText, body.author);
+    const comments = await this.huizhiService.addComment(id, body.commentText, body.author, body.department);
     return { comments };
   }
 

@@ -486,23 +486,42 @@ ${dinner}
   // Actions
   const handleVote = (id: string) => {
     const authorName = userInfo?.name || "匿名";
+    const deptName = userInfo?.department || "";
     // 1. 触发 Q弹动效
     setVotedIds((prev) => [...prev, id]);
     setTimeout(() => {
       setVotedIds((prev) => prev.filter(x => x !== id));
     }, 1000);
 
-    // 2. 乐观更新本地状态 (点赞数立即+1，并在卡片弹幕列表追加一条点赞交互)
+    // 2. 检查本地是否已经点赞过，以决定是【点赞】还是【取消点赞】
+    let isCurrentlyVoted = false;
     setState((prev) => {
+      const idea = prev.ideas.find((x) => x.id === id);
+      if (idea && idea.interactions) {
+        isCurrentlyVoted = idea.interactions.some(
+          (x: any) => x.type === "点赞" && x.user === authorName
+        );
+      }
+
       const newIdeas = prev.ideas.map((idea) => {
         if (idea.id === id) {
-          const newInteractions = [
-            ...(idea.interactions || []),
-            { user: authorName, type: "点赞", content: "" }
-          ];
+          let newInteractions;
+          let voteDiff = 1;
+          if (isCurrentlyVoted) {
+            newInteractions = (idea.interactions || []).filter(
+              (x: any) => !(x.type === "点赞" && x.user === authorName)
+            );
+            voteDiff = -1;
+          } else {
+            newInteractions = [
+              ...(idea.interactions || []),
+              { user: authorName, type: "点赞", content: "" }
+            ];
+            voteDiff = 1;
+          }
           return {
             ...idea,
-            votes: idea.votes + 1,
+            votes: Math.max(0, idea.votes + voteDiff),
             interactions: newInteractions
           };
         }
@@ -511,13 +530,13 @@ ${dinner}
       return { ...prev, ideas: newIdeas };
     });
 
-    showToast("点赞成功！感谢您的共创。");
+    showToast(isCurrentlyVoted ? "已取消点赞" : "点赞成功！感谢您的共创。");
 
-    // 3. 静默网络请求与刷新
+    // 3. 静默网络请求与刷新 (带上 department)
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/vote`,
       method: "POST",
-      data: { author: authorName }
+      data: { author: authorName, department: deptName }
     }).then((res) => {
       if (res.data?.success) {
         refreshAllData();
@@ -556,11 +575,11 @@ ${dinner}
 
     showToast("发表评论成功！已同步至互动中心。");
 
-    // 2. 静默网络请求
+    // 2. 静默网络请求 (带上 department)
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/comment`,
       method: "POST",
-      data: { commentText: text.trim(), author: authorName }
+      data: { commentText: text.trim(), author: authorName, department: userInfo?.department || "" }
     }).then((res) => {
       if (res.data?.comments) {
         showToast("发表评论成功！已同步至互动中心。");
