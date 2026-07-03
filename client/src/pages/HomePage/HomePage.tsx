@@ -160,6 +160,19 @@ export default function HomePage() {
   const [categoryFilter, setCategoryFilter] = useState("全部");
   const [sortMode, setSortMode] = useState("hot");
 
+  // Multi-table config state from Bitable
+  const [bootstrapConfig, setBootstrapConfig] = useState<any>({
+    basicInfo: null,
+    flow: [],
+    templates: [],
+    awards: [],
+    rules: [],
+    infoConfig: null,
+    sponsors: []
+  });
+
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+
   // Form states
   const [newIdea, setNewIdea] = useState({
     author: "",
@@ -179,8 +192,8 @@ export default function HomePage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Load ideas from backend multitenant/Bitable source on mount
-  useEffect(() => {
+  const refreshAllData = useCallback(() => {
+    // 1. 获取 ideas
     axiosForBackend({
       url: "/api/huizhi/ideas",
       method: "GET"
@@ -192,9 +205,50 @@ export default function HomePage() {
         }));
       }
     }).catch((err) => {
-      console.error("Failed to fetch ideas from backend database:", err);
+      console.error("Failed to fetch ideas:", err);
+    });
+
+    // 2. 获取 bootstrap
+    axiosForBackend({
+      url: "/api/huizhi/bootstrap",
+      method: "GET"
+    }).then((res) => {
+      if (res.data) {
+        setBootstrapConfig(res.data);
+        if (res.data.infoConfig) {
+          const cfg = res.data.infoConfig;
+          setState((prev) => ({
+            ...prev,
+            intent: {
+              purpose: cfg['主办方核心目的'] || '',
+              outcome: cfg['希望达成的效果'] || '',
+              resources: cfg['投入资源与边界'] || '',
+              keywords: cfg['智能策划偏好关键词'] || ''
+            }
+          }));
+        }
+      }
+    }).catch((err) => {
+      console.error("Failed to fetch bootstrap config:", err);
+    });
+
+    // 3. 获取 leaderboard
+    axiosForBackend({
+      url: "/api/huizhi/leaderboard",
+      method: "GET"
+    }).then((res) => {
+      if (Array.isArray(res.data)) {
+        setLeaderboardData(res.data);
+      }
+    }).catch((err) => {
+      console.error("Failed to fetch leaderboard data:", err);
     });
   }, []);
+
+  // Load from backend on mount
+  useEffect(() => {
+    refreshAllData();
+  }, [refreshAllData]);
 
   // Sync hash to activeView
   useEffect(() => {
@@ -348,17 +402,14 @@ ${dinner}
 
   // Actions
   const handleVote = (id: string) => {
+    const authorName = newIdea.author.trim() || "王迅";
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/vote`,
-      method: "POST"
+      method: "POST",
+      data: { author: authorName }
     }).then((res) => {
       if (res.data?.success) {
-        setState((prev) => ({
-          ...prev,
-          ideas: prev.ideas.map((idea) =>
-            idea.id === id ? { ...idea, votes: idea.votes + 1 } : idea
-          )
-        }));
+        refreshAllData();
       }
     }).catch((err) => {
       console.error("Failed to vote for idea:", err);
@@ -367,18 +418,14 @@ ${dinner}
 
   const handleAddComment = (id: string, text: string) => {
     if (!text.trim()) return;
+    const authorName = newIdea.author.trim() || "王迅";
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/comment`,
       method: "POST",
-      data: { commentText: text.trim() }
+      data: { commentText: text.trim(), author: authorName }
     }).then((res) => {
       if (res.data?.comments) {
-        setState((prev) => ({
-          ...prev,
-          ideas: prev.ideas.map((idea) =>
-            idea.id === id ? { ...idea, comments: res.data.comments } : idea
-          )
-        }));
+        refreshAllData();
       }
     }).catch((err) => {
       console.error("Failed to add comment:", err);
@@ -401,10 +448,6 @@ ${dinner}
       data: payload
     }).then((res) => {
       if (res.data) {
-        setState((prev) => ({
-          ...prev,
-          ideas: [res.data, ...prev.ideas]
-        }));
         setNewIdea({
           author: "",
           role: "",
@@ -414,6 +457,7 @@ ${dinner}
           content: ""
         });
         changeView("ideas");
+        refreshAllData();
       }
     }).catch((err) => {
       console.error("Failed to submit idea:", err);
@@ -437,60 +481,30 @@ ${dinner}
       setCopyStatus("浏览器未允许自动复制，请手动选中文案复制。");
     }
   };
-
-  const handleExportData = () => {
-    const data = {
-      exportedAt: new Date().toISOString(),
-      activityInfo: {
-        date: "2026-09-03",
-        city: "成都",
-        totalPeople: 500,
-        dinnerPeople: 30,
-        dinnerAaPrice: 198,
-        schedule: [
-          "09:00-12:00 上午主论坛",
-          "12:00-13:30 自助餐交流",
-          "13:30-17:30 下午决赛与专题分享，含90分钟热场活动和问题解答",
-          "18:00-20:00 AIAA晚餐"
-        ]
-      },
-      intent: state.intent,
-      publish: state.publish,
-      scoring: {
-        submit: 1,
-        vote: 0.2,
-        adoptedPoint: 5,
-        fullPlan: 20,
-        aiPlanScore: "0-100",
-        aiPlanWeight: "按入选投稿AI建议分占比计算"
-      },
-      ideas: state.ideas,
-      leaderboard: aggregatePeople(),
-      aiPlan: generatePlan()
-    };
-    setExportBoxValue(JSON.stringify(data, null, 2));
-  };
-
-  const handleResetDemo = () => {
-    const defaultPubWithUrl = { ...defaultPublish, publishUrl: getDefaultEntryUrl() };
-    setState({
-      ideas: seedIdeas,
-      intent: defaultIntent,
-      publish: defaultPubWithUrl
-    });
-    setIntentInput(defaultIntent);
-    setPublishInput(defaultPubWithUrl);
-    setExportBoxValue("");
-  };
-
-
-
-  // Metrics
   const totalIdeas = state.ideas.length;
-  const totalAdoptedPoints = state.ideas.reduce((sum, i) => sum + i.adoptedPoints, 0);
-  const totalPeople = aggregatePeople().length;
+  const totalAdoptedPoints = leaderboardData.reduce((sum, i) => sum + i.adoptedPoints, 0);
+  const totalPeople = leaderboardData.length;
 
   const aiPlan = generatePlan();
+
+  // Helper date/time formatters
+  const formatTimestamp = (ts: any) => {
+    if (!ts) return "";
+    const date = new Date(ts);
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  };
+
+  const formatTimeRange = (start: any, end: any) => {
+    if (!start) return "";
+    const startDate = new Date(start);
+    const endDate = end ? new Date(end) : null;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    
+    const startTimeStr = `${pad(startDate.getHours())}:${pad(startDate.getMinutes())}`;
+    if (!endDate) return startTimeStr;
+    const endTimeStr = `${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`;
+    return `${startTimeStr}-${endTimeStr}`;
+  };
 
   // Handle individual comment UI toggles
   const [commentViewToggle, setCommentViewToggle] = useState<Record<string, boolean>>({});
@@ -520,7 +534,7 @@ ${dinner}
           <h1>把每一个好点子，变成可采纳、可计分、可兑换的活动资产。</h1>
           <div className="hero-metrics" aria-label="活动关键指标">
             <span><b id="metricIdeas">{totalIdeas}</b>条建议</span>
-            <span><b id="metricAdopted">{totalAdoptedPoints}</b>个采纳点</span>
+            <span><b id="metricAdopted">{totalAdoptedPoints.toFixed(1)}</b>个采纳得分</span>
             <span><b id="metricPeople">{totalPeople}</b>位共创者</span>
           </div>
         </section>
@@ -531,15 +545,18 @@ ${dinner}
           <div>
             <h2>活动共创目标</h2>
             <p>
-              围绕“高原安AI效率先锋分享大会”，征集营销推广、精品案例、互动体验、嘉宾邀请、客户转化、AIAA晚餐等建议。
-              组委会按采纳点计分，积分公开展示，用奖品兑换激励更多人参与。
+              {bootstrapConfig.infoConfig?.主办方核心目的 || 
+                "围绕“高原安AI效率先锋分享大会”，征集营销推广、精品案例、互动体验、嘉宾邀请、客户转化、AIAA晚餐等建议。组委会按采纳点计分，积分公开展示，用奖品兑换激励更多人参与。"}
             </p>
           </div>
           <div className="deadline-strip">
             <span>方案定稿</span>
             <strong>2026.07.10 前</strong>
             <span>活动窗口</span>
-            <strong>2026.08 下旬 - 09 初</strong>
+            <strong>
+              {bootstrapConfig.basicInfo?.活动时间 ? 
+                formatTimestamp(bootstrapConfig.basicInfo.活动时间) : "2026.09.03"}
+            </strong>
           </div>
         </section>
 
@@ -571,33 +588,93 @@ ${dinner}
             </div>
             <div className="info-layout">
               <article className="panel info-main">
-                <span className="mini-label">2026年9月3日 · 成都 · 约500人</span>
-                <h2>AI运用于企业管理的实战分享暨飞书效率先锋决赛</h2>
-                <p>面向企业主、高管、企业二代与数字化转型核心人员，围绕AI时代企业管理、飞书效率实践、案例决赛对决和未来设想展开全天活动。</p>
+                <span className="mini-label">
+                  {bootstrapConfig.basicInfo?.活动时间 ? formatTimestamp(bootstrapConfig.basicInfo.活动时间) : "2026年9月3日"} · 
+                  {bootstrapConfig.basicInfo?.活动地点 || "成都"} · 
+                  约{bootstrapConfig.basicInfo?.规模估计 || "500"}人
+                </span>
+                <h2>{bootstrapConfig.basicInfo?.活动主题 || "AI运用于企业管理的实战分享暨飞书效率先锋决赛"}</h2>
+                <p>{bootstrapConfig.basicInfo?.活动描述 || "面向企业主、高管、企业二代与数字化转型核心人员，围绕AI时代企业管理、飞书效率实践、案例决赛对决和未来设想展开全天活动。"}</p>
                 <div className="info-stats">
-                  <span><b>500</b>总人数约</span>
-                  <span><b>30</b>AIAA晚餐企业主席位</span>
-                  <span><b>198</b>元/人自愿AA</span>
+                  <span><b>{bootstrapConfig.basicInfo?.规模估计 || "500"}</b>总人数约</span>
+                  <span><b>{bootstrapConfig.basicInfo?.AIAA晚餐企业主席位 || "30"}</b>AIAA晚餐企业主席位</span>
+                  <span><b>{bootstrapConfig.basicInfo?.['元/人自愿AA'] || "198"}</b>元/人自愿AA</span>
                 </div>
               </article>
               <article className="panel schedule-panel">
                 <h2>当天流程</h2>
                 <ol className="timeline">
-                  <li><strong>09:00-12:00</strong><span>上午主论坛：AI与企业管理实战分享、飞书效率先锋展示。</span></li>
-                  <li><strong>12:00-13:30</strong><span>自助餐与交流，承接上午内容并促进商机互动。</span></li>
-                  <li><strong>13:30-17:30</strong><span>下午决赛与专题分享，中间插入共90分钟热场活动和问题解答。</span></li>
-                  <li><strong>18:00-20:00</strong><span>AIAA晚餐，会中自愿AA制报名，每人198元，主要针对30位企业主深度交流。</span></li>
+                  {bootstrapConfig.flow && bootstrapConfig.flow.length > 0 ? (
+                    [...bootstrapConfig.flow]
+                      .sort((a: any, b: any) => (a.流程开始时间 || 0) - (b.流程开始时间 || 0))
+                      .map((item: any, idx: number) => (
+                        <li key={idx}>
+                          <strong>{formatTimeRange(item.流程开始时间, item.流程结束时间)}</strong>
+                          <span>{item.流程描述}</span>
+                        </li>
+                      ))
+                  ) : (
+                    <>
+                      <li><strong>09:00-12:00</strong><span>上午主论坛：AI与企业管理实战分享、飞书效率先锋展示。</span></li>
+                      <li><strong>12:00-13:30</strong><span>自助餐与交流，承接上午内容并促进商机互动。</span></li>
+                      <li><strong>13:30-17:30</strong><span>下午决赛与专题分享，中间插入共90分钟热场活动和问题解答。</span></li>
+                      <li><strong>18:00-20:00</strong><span>AIAA晚餐，会中自愿AA制报名，每人198元，主要针对30位企业主深度交流。</span></li>
+                    </>
+                  )}
                 </ol>
               </article>
             </div>
             <div className="theme-grid">
-              <article><h3>AI运用于企业管理的实战分享</h3><p>展示真实企业管理场景中AI提效、降本、增收的实践方法。</p></article>
-              <article><h3>飞书效率先锋决赛对决</h3><p>用轻比赛、重展示的方式呈现内部精品案例和业务改造成果。</p></article>
-              <article><h3>AI时代企业管理经验交流</h3><p>让企业主围绕组织、流程、绩效、销售和客户经营展开交流。</p></article>
-              <article><h3>飞书应用未来与设想</h3><p>邀请字节跳动高级分享，讨论飞书应用于现代企业管理的未来方向。</p></article>
+              {bootstrapConfig.templates && bootstrapConfig.templates.length > 0 ? (
+                bootstrapConfig.templates.map((item: any, idx: number) => (
+                  <article key={idx}>
+                    <h3>{item.案例标题}</h3>
+                    <p>{item.案例描述}</p>
+                  </article>
+                ))
+              ) : (
+                <>
+                  <article><h3>AI运用于企业管理的实战分享</h3><p>展示真实企业管理场景中AI提效、降本、增收的实践方法。</p></article>
+                  <article><h3>飞书效率先锋决赛对决</h3><p>用轻比赛、重展示的方式呈现内部精品案例和业务改造成果。</p></article>
+                  <article><h3>AI时代企业管理经验交流</h3><p>让企业主围绕组织、流程、绩效、销售和客户经营展开交流。</p></article>
+                  <article><h3>飞书应用未来与设想</h3><p>邀请字节跳动高级分享，讨论飞书应用于现代企业管理的未来方向。</p></article>
+                </>
+              )}
             </div>
+
+            {/* 新增：发起企业及发起人想法区域 */}
+            {bootstrapConfig.infoConfig && (
+              <div className="panel sponsor-section" style={{ marginTop: '24px', padding: '24px' }}>
+                <span className="mini-label">共创说明</span>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>联合发起企业及共创目的</h2>
+                <div className="sponsor-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                  <div className="purpose-box" style={{ background: 'var(--accent)', padding: '20px', borderRadius: '4px' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', color: 'var(--primary)' }}>共创目的与期待</h3>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '8px', lineHeight: '1.6' }}><strong>联合发起目的：</strong>{bootstrapConfig.infoConfig.主办方核心目的}</p>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '8px', lineHeight: '1.6' }}><strong>希望达成效果：</strong>{bootstrapConfig.infoConfig.希望达成的效果}</p>
+                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}><strong>资源与边界限制：</strong>{bootstrapConfig.infoConfig.投入资源与边界}</p>
+                  </div>
+                  <div className="sponsors-box" style={{ background: 'var(--accent)', padding: '20px', borderRadius: '4px' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', color: 'var(--primary)' }}>三方联合发起人职责</h3>
+                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                      {bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0 ? (
+                        bootstrapConfig.sponsors.map((item: any, idx: number) => (
+                          <li key={idx} style={{ fontSize: '0.9rem', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--border)', lineHeight: '1.6' }}>
+                            <strong style={{ color: 'var(--foreground)' }}>{item.企业名称}：</strong>
+                            <span>{item.企业描述}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li style={{ fontSize: '0.9rem' }}>暂无发起企业职责配置</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         )}
+
 
         {/* View: ideas */}
         {activeView === "ideas" && (
@@ -767,13 +844,30 @@ ${dinner}
               <aside className="panel reward-panel">
                 <h2>计分规则</h2>
                 <ul>
-                  <li><strong>提交</strong><span>+1 分</span></li>
-                  <li><strong>被点赞</strong><span>+0.2 分/赞</span></li>
-                  <li><strong>采纳点</strong><span>+5 分/点</span></li>
-                  <li><strong>完整策划被采用</strong><span>+20 分</span></li>
+                  {bootstrapConfig.rules && bootstrapConfig.rules.length > 0 ? (
+                    bootstrapConfig.rules.map((rule: any, idx: number) => (
+                      <li key={idx}>
+                        <strong>{rule.积分规则}</strong>
+                        <span>{Number(rule.分数变动) > 0 ? `+${rule.分数变动}` : rule.分数变动} 分</span>
+                      </li>
+                    ))
+                  ) : (
+                    <>
+                      <li><strong>提交</strong><span>+1 分</span></li>
+                      <li><strong>被点赞</strong><span>+0.2 分/赞</span></li>
+                      <li><strong>采纳点</strong><span>+5 分/点</span></li>
+                      <li><strong>完整策划被采用</strong><span>+20 分</span></li>
+                    </>
+                  )}
                 </ul>
-                <h3>奖品建议</h3>
-                <p>30分兑换活动伴手礼，60分兑换定制纪念杯，100分兑换AI效率工具会员或晚餐交流席位优先权。</p>
+                <h3>奖品兑换</h3>
+                {bootstrapConfig.awards && bootstrapConfig.awards.length > 0 ? (
+                  <p>
+                    {bootstrapConfig.awards.map((award: any) => `${award.所需积分}分兑换${award.奖品名称}`).join('，')}。
+                  </p>
+                ) : (
+                  <p>30分兑换活动伴手礼，60分兑换定制纪念杯，100分兑换AI效率工具会员或晚餐交流席位优先权。</p>
+                )}
               </aside>
             </div>
           </section>
@@ -858,22 +952,33 @@ ${dinner}
             <div className="section-head">
               <div>
                 <h2>积分榜</h2>
-                <p>公开透明，让“参与感”变成持续动力。</p>
+                <p>公开透明，直接对接多维表格人员榜，让“参与感”变成持续动力。</p>
               </div>
             </div>
             <div id="leaderboard" className="leaderboard">
-              {aggregatePeople().map((person, index) => (
-                <article key={index} className="leader-row">
-                  <span className="rank">{index + 1}</span>
-                  <div>
-                    <h3>{person.author} <small>{person.role}</small></h3>
-                    <p className="muted">
-                      {person.ideas}条建议 · {person.votes}个赞 · {person.adoptedPoints}个采纳点 · {person.fullPlans}份完整策划
-                    </p>
-                  </div>
-                  <strong className="leader-score">{person.score.toFixed(1)} 分</strong>
-                </article>
-              ))}
+              {leaderboardData && leaderboardData.length > 0 ? (
+                leaderboardData.map((person, index) => (
+                  <article key={person.id || index} className="leader-row" style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="rank">{index + 1}</span>
+                    {person.avatarUrl && (
+                      <img 
+                        src={person.avatarUrl} 
+                        alt={person.author} 
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', marginRight: '12px', border: '1px solid var(--border)' }} 
+                      />
+                    )}
+                    <div>
+                      <h3>{person.author} <small>{person.role || '共创先锋'}</small></h3>
+                      <p className="muted">
+                        {person.ideas}条建议 · {person.adoptedPoints.toFixed(1)}分得分情况
+                      </p>
+                    </div>
+                    <strong className="leader-score">{person.score.toFixed(1)} 分</strong>
+                  </article>
+                ))
+              ) : (
+                <p>暂无排行榜数据</p>
+              )}
             </div>
           </section>
         )}

@@ -16,6 +16,19 @@ export interface Idea {
   createdAt: string;
 }
 
+const TABLES = {
+  ideas: 'tblT07IEX7PmjPUP',        // 点子广场
+  interactions: 'tbl1lgQJR8oMLPRX', // 互动中心
+  rules: 'tblFYdxOloAz57on',        // 积分规则
+  awards: 'tblaEc7GcXvqRNom',       // 奖池
+  flow: 'tblm9mealdkMJ6pE',         // 流程安排
+  templates: 'tblPF3M3a35SxaoN',    // 展示模版
+  basicInfo: 'tblfQ1Asb54goCMu',    // 基础信息
+  infoConfig: 'tblYvTnJPYpcHgPh',   // 信息配置
+  sponsors: 'tblGxTgWKe4Qvrf4',     // 发起企业
+  members: 'tbljG1iBh18lc4G4'       // 人员表
+};
+
 const seedIdeas: Idea[] = [
   {
     id: "idea-001",
@@ -28,56 +41,11 @@ const seedIdeas: Idea[] = [
     votes: 18,
     adoptedPoints: 3,
     fullPlan: false,
-    comments: ["可以和报名表字段打通。", "也适合给主持人口播引用。"],
+    comments: ["市场组: 可以和报名表字段打通。", "技术组: 也适合给主持人口播引用。"],
     createdAt: "2026-06-26T15:00:00.000Z"
-  },
-  {
-    id: "idea-002",
-    author: "技术组",
-    role: "案例负责人",
-    title: "案例展示统一用真实业务前后对比",
-    category: "精品案例",
-    phase: "方案定稿前",
-    content: "每个案例只讲三个画面：痛点、飞书/AI改造动作、效率结果。避免讲产品堆功能，让企业老板能一眼看到价值。",
-    votes: 25,
-    adoptedPoints: 4,
-    fullPlan: true,
-    comments: ["建议每个案例控制在8分钟。"],
-    createdAt: "2026-06-26T15:20:00.000Z"
-  },
-  {
-    id: "idea-003",
-    author: "销售组",
-    role: "商机推进",
-    title: "AIAA晚餐设置行业圆桌座位卡",
-    category: "AIAA晚餐",
-    phase: "会后转化期",
-    content: "晚餐不做硬销售，按行业和数字化痛点分桌，每桌放一张问题卡，由高原安同事引导客户互相交流。",
-    votes: 12,
-    adoptedPoints: 2,
-    fullPlan: false,
-    comments: [],
-    createdAt: "2026-06-26T16:00:00.000Z"
-  },
-  {
-    id: "idea-004",
-    author: "品牌组",
-    role: "宣发",
-    title: "小红书和抖音预热做效率挑战短视频",
-    category: "宣传推广",
-    phase: "预热宣传期",
-    content: "用30秒短视频展示一个AI工具让会议纪要、任务拆解、客户跟进提速，结尾引导报名线下分享大会。",
-    votes: 9,
-    adoptedPoints: 1,
-    fullPlan: false,
-    comments: ["注意不包装成独立产品。"],
-    createdAt: "2026-06-26T16:08:00.000Z"
   }
 ];
 
-/**
- * 业务汇智箱逻辑服务类，对接飞书多维表格实现核心功能
- */
 @Injectable()
 export class HuizhiService {
   private readonly logger = new Logger(HuizhiService.name);
@@ -85,86 +53,189 @@ export class HuizhiService {
 
   constructor(private readonly feishuService: FeishuService) {}
 
-  /**
-   * 功能描述：检查飞书多维表格的配置是否完整可用
-   * @return {boolean} 配置完整返回 true，否则返回 false
-   */
   private isFeishuConfigured(): boolean {
     const token = process.env.FEISHU_BITABLE_APP_TOKEN;
-    const tableId = process.env.FEISHU_BITABLE_TABLE_ID;
-    
-    // 如果 token 或 tableId 是默认占位符或未配置，说明无法使用飞书连接，需使用内存缓存
-    if (!token || !tableId || token.includes('占位') || tableId.includes('占位')) {
+    if (!token || token.includes('占位')) {
       return false;
     }
     return true;
   }
 
   /**
-   * 功能描述：获取项目初始引导数据
-   * @return {any} 引导配置信息对象
+   * 功能描述：获取项目初始引导数据和多维表格中的静态配置信息
    */
-  getBootstrap() {
-    return {
-      projectName: '高原安A效率先锋汇智箱',
-      uploadTarget: '飞书妙搭',
-      stage: 'template-aligned',
-      modules: ['点子广场', '投放想法', '积分榜'],
-    };
+  async getBootstrap() {
+    if (!this.isFeishuConfigured()) {
+      return {
+        projectName: '高原安A效率先锋汇智箱',
+        uploadTarget: '飞书妙搭',
+        stage: 'template-aligned',
+        modules: ['点子广场', '投放想法', '积分榜'],
+        basicInfo: null,
+        flow: [],
+        templates: [],
+        awards: [],
+        rules: [],
+        infoConfig: null,
+        sponsors: []
+      };
+    }
+
+    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
+    try {
+      const [
+        basicInfoRecords,
+        flowRecords,
+        templatesRecords,
+        awardsRecords,
+        rulesRecords,
+        infoConfigRecords,
+        sponsorsRecords
+      ] = await Promise.all([
+        this.feishuService.getRecords(appToken, TABLES.basicInfo),
+        this.feishuService.getRecords(appToken, TABLES.flow),
+        this.feishuService.getRecords(appToken, TABLES.templates),
+        this.feishuService.getRecords(appToken, TABLES.awards),
+        this.feishuService.getRecords(appToken, TABLES.rules),
+        this.feishuService.getRecords(appToken, TABLES.infoConfig),
+        this.feishuService.getRecords(appToken, TABLES.sponsors)
+      ]);
+
+      return {
+        projectName: '高原安A效率先锋汇智箱',
+        uploadTarget: '飞书妙搭',
+        stage: 'template-aligned',
+        modules: ['点子广场', '投放想法', '积分榜'],
+        basicInfo: basicInfoRecords[0]?.fields || null,
+        flow: flowRecords.map(r => r.fields),
+        templates: templatesRecords.map(r => r.fields),
+        awards: awardsRecords.map(r => r.fields),
+        rules: rulesRecords.map(r => r.fields),
+        infoConfig: infoConfigRecords[0]?.fields || null,
+        sponsors: sponsorsRecords.map(r => r.fields)
+      };
+    } catch (error) {
+      this.logger.error('获取飞书多维表格初始配置失败，降级使用空配置', error.message);
+      return {
+        projectName: '高原安A效率先锋汇智箱',
+        uploadTarget: '飞书妙搭',
+        stage: 'template-aligned',
+        modules: ['点子广场', '投放想法', '积分榜'],
+        basicInfo: null,
+        flow: [],
+        templates: [],
+        awards: [],
+        rules: [],
+        infoConfig: null,
+        sponsors: []
+      };
+    }
   }
 
   /**
-   * 功能描述：从飞书多维表格或内存缓存中获取所有的点子列表
-   * @return {Promise<Idea[]>} 点子记录列表
+   * 功能描述：拉取所有的点子以及对应的互动评论、点赞数量
    */
   async getIdeas(): Promise<Idea[]> {
     if (!this.isFeishuConfigured()) {
-      this.logger.warn('飞书多维表格未配置或为占位符，将使用本地内存数据');
       return this.memoryIdeas;
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const tableId = process.env.FEISHU_BITABLE_TABLE_ID!;
+    try {
+      const [ideaRecords, interactionRecords] = await Promise.all([
+        this.feishuService.getRecords(appToken, TABLES.ideas),
+        this.feishuService.getRecords(appToken, TABLES.interactions)
+      ]);
 
-    const records = await this.feishuService.getRecords(appToken, tableId);
-    if (!records || records.length === 0) {
-      this.logger.warn('未从飞书获取到记录或接口报错，返回内存数据');
-      return this.memoryIdeas;
-    }
-
-    // 将多维表格的记录转换为前端认识的 Idea 结构
-    return records.map((record) => {
-      const fields = record.fields;
-      let comments: string[] = [];
-      if (fields.comments) {
-        try {
-          comments = JSON.parse(fields.comments);
-        } catch {
-          comments = String(fields.comments).split(',').filter(Boolean);
-        }
+      if (!ideaRecords || ideaRecords.length === 0) {
+        return [];
       }
 
-      return {
-        id: record.record_id,
-        author: fields.author || '',
-        role: fields.role || '',
-        title: fields.title || '',
-        category: fields.category || '',
-        phase: fields.phase || '',
-        content: fields.content || '',
-        votes: Number(fields.votes) || 0,
-        adoptedPoints: Number(fields.adoptedPoints) || 0,
-        fullPlan: Boolean(fields.fullPlan),
-        comments,
-        createdAt: fields.createdAt || new Date().toISOString(),
-      };
-    });
+      return ideaRecords.map((record) => {
+        const fields = record.fields;
+        const recordId = record.record_id;
+        
+        // 姓名是飞书人员字段
+        const authorObj = fields['姓名']?.[0] || {};
+        let authorName = authorObj.name || authorObj.en_name || '';
+        let role = String(fields['部门'] || '');
+
+        if (!authorName) {
+          // 尝试从部门字段中解码出外部投稿人名字，格式为 "技术组 (王某测试)"
+          const match = role.match(/^(.*?)\s*\(([^)]+)\)$/);
+          if (match) {
+            role = match[1].trim();
+            authorName = match[2].trim();
+          } else {
+            authorName = '匿名';
+          }
+        }
+
+        // 筛选和统计此点子相关的互动
+        const relatedInteractions = interactionRecords.filter((inter) => {
+          const linkedIds = inter.fields['关联点子']?.[0]?.record_ids || [];
+          return linkedIds.includes(recordId);
+        });
+
+        const votesCount = relatedInteractions.filter((x) => x.fields['操作'] === '点赞').length;
+        const comments = relatedInteractions
+          .filter((x) => x.fields['操作'] === '评论' && x.fields['评论内容'])
+          .map((x) => {
+            const u = x.fields['用户']?.[0] || {};
+            const uName = u.name || '匿名';
+            return `${uName}: ${String(x.fields['评论内容']).trim()}`;
+          });
+
+        return {
+          id: recordId,
+          author: authorName,
+          role: role,
+          title: fields['点子标题'] ? String(fields['点子标题']).trim() : '',
+          category: String(fields['建议分类主'] || ''),
+          phase: String(fields['建议分类副'] || ''),
+          content: fields['点子详情'] ? String(fields['点子详情']).trim() : '',
+          votes: votesCount,
+          adoptedPoints: Number(fields['点子评分']) || 0,
+          fullPlan: fields['点子采纳'] === '采纳',
+          comments: comments,
+          createdAt: String(fields['createdAt'] || new Date().toISOString()),
+        };
+      });
+    } catch (error) {
+      this.logger.error('拉取点子广场或互动中心数据失败', error.message);
+      return this.memoryIdeas;
+    }
   }
 
   /**
-   * 功能描述：向数据库（飞书多维表格）中添加一条新点子
-   * @param ideaData {Omit<Idea, 'id' | 'votes' | 'adoptedPoints' | 'fullPlan' | 'comments' | 'createdAt'>} 新点子的部分必填属性 (必填)
-   * @return {Promise<Idea>} 返回完整的新增点子结构
+   * 辅助方法：从飞书多维表格成员表查找同名用户
+   */
+  private async findFeishuUserByName(authorName: string): Promise<any> {
+    try {
+      const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
+      const records = await this.feishuService.getRecords(appToken, TABLES.members);
+      if (records) {
+        for (const record of records) {
+          const nameList = record.fields['人员名称'] || [];
+          for (const user of nameList) {
+            if (user.name === authorName || user.en_name === authorName) {
+              return {
+                id: user.id,
+                name: user.name,
+                avatar_url: user.avatar_url,
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`查找飞书用户失败: ${e.message}`);
+    }
+    return null;
+  }
+
+  /**
+   * 功能描述：提交新想法到点子广场
    */
   async createIdea(ideaData: any): Promise<Idea> {
     const newIdea: Idea = {
@@ -188,27 +259,37 @@ export class HuizhiService {
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const tableId = process.env.FEISHU_BITABLE_TABLE_ID!;
+    
+    // 匹配飞书多维表格中是否存在该用户
+    const matchedUser = await this.findFeishuUserByName(newIdea.author);
 
-    const fields = {
-      author: newIdea.author,
-      role: newIdea.role,
-      title: newIdea.title,
-      category: newIdea.category,
-      phase: newIdea.phase,
-      content: newIdea.content,
-      votes: newIdea.votes,
-      adoptedPoints: newIdea.adoptedPoints,
-      fullPlan: newIdea.fullPlan,
-      comments: JSON.stringify(newIdea.comments),
-      createdAt: newIdea.createdAt,
+    const fields: any = {
+      '点子标题': newIdea.title,
+      '点子详情': newIdea.content,
+      '建议分类主': newIdea.category,
+      '建议分类副': newIdea.phase,
+      '点子评分': 0,
+      '点子采纳': null
     };
 
-    const record = await this.feishuService.createRecord(appToken, tableId, fields);
-    if (record) {
-      newIdea.id = record.record_id;
+    if (matchedUser) {
+      fields['姓名'] = [{ id: matchedUser.id }];
+      fields['部门'] = newIdea.role;
     } else {
-      this.logger.error('向飞书插入记录失败，降级保存至本地内存');
+      // 匹配不到时的兼容：写入部门字段为 "技术组 (王某测试)"，前端 getIdeas 会反向解析
+      fields['部门'] = `${newIdea.role} (${newIdea.author})`;
+      // '姓名' 留空，避免 UserFieldConvFail
+    }
+
+    try {
+      const record = await this.feishuService.createRecord(appToken, TABLES.ideas, fields);
+      if (record) {
+        newIdea.id = record.record_id;
+      } else {
+        this.memoryIdeas.unshift(newIdea);
+      }
+    } catch (error) {
+      this.logger.error('插入新点子失败，降级存入本地内存', error.message);
       this.memoryIdeas.unshift(newIdea);
     }
 
@@ -216,12 +297,10 @@ export class HuizhiService {
   }
 
   /**
-   * 功能描述：给指定的点子进行投票点赞（+1赞）
-   * @param id {string} 点子唯一标识符 id (必填)
-   * @return {Promise<boolean>} 点赞操作成功返回 true，失败返回 false
+   * 功能描述：点赞（写入互动中心）
    */
   async voteIdea(id: string): Promise<boolean> {
-    if (!this.isFeishuConfigured() || id.startsWith('idea-')) {
+    if (!this.isFeishuConfigured()) {
       const idx = this.memoryIdeas.findIndex((x) => x.id === id);
       if (idx !== -1) {
         this.memoryIdeas[idx].votes += 1;
@@ -231,107 +310,139 @@ export class HuizhiService {
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const tableId = process.env.FEISHU_BITABLE_TABLE_ID!;
+    try {
+      const rulesRecords = await this.feishuService.getRecords(appToken, TABLES.rules);
+      const voteRule = rulesRecords.find((x) => x.fields['积分规则'] === '点赞');
+      const scoreDiff = voteRule ? Number(voteRule.fields['分数变动']) : 0.2;
 
-    // 首先拉取所有记录以便获知当前赞数
-    const ideas = await this.getIdeas();
-    const currentIdea = ideas.find((x) => x.id === id);
-    if (!currentIdea) {
+      // 为避免 UserFieldConvFail，优先查找存在的用户
+      const matchedUser = await this.findFeishuUserByName('王迅');
+
+      const fields: any = {
+        '关联点子': [
+          {
+            record_ids: [id],
+            table_id: TABLES.ideas,
+          }
+        ],
+        '操作': '点赞',
+        '积分变动': scoreDiff
+      };
+
+      if (matchedUser) {
+        fields['用户'] = [{ id: matchedUser.id }];
+      }
+
+      const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);
+      return !!result;
+    } catch (error) {
+      this.logger.error('点赞记录插入失败', error.message);
       return false;
     }
-
-    const result = await this.feishuService.updateRecord(appToken, tableId, id, {
-      votes: currentIdea.votes + 1,
-    });
-
-    return !!result;
   }
 
   /**
-   * 功能描述：为指定的点子添加一条评论
-   * @param id {string} 点子唯一标识符 id (必填)
-   * @param commentText {string} 评论文本 (必填)
-   * @return {Promise<string[]>} 返回更新后的评论数组，操作失败返回空数组
+   * 功能描述：添加评论（写入互动中心）
    */
-  async addComment(id: string, commentText: string): Promise<string[]> {
+  async addComment(id: string, commentText: string, author?: string): Promise<string[]> {
     if (!commentText.trim()) return [];
 
-    if (!this.isFeishuConfigured() || id.startsWith('idea-')) {
+    if (!this.isFeishuConfigured()) {
       const idx = this.memoryIdeas.findIndex((x) => x.id === id);
       if (idx !== -1) {
-        this.memoryIdeas[idx].comments.push(commentText.trim());
+        const commentAuthor = author || '匿名';
+        this.memoryIdeas[idx].comments.push(`${commentAuthor}: ${commentText.trim()}`);
         return this.memoryIdeas[idx].comments;
       }
       return [];
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const tableId = process.env.FEISHU_BITABLE_TABLE_ID!;
+    const commentAuthor = author || '匿名';
+    try {
+      // 匹配评论作者
+      const matchedUser = await this.findFeishuUserByName(commentAuthor);
+      const matchedDefault = await this.findFeishuUserByName('王迅');
+      
+      // 如果是非飞书合法用户，我们将名字格式写入评论内容，防止名字丢失且防止 API 写入失败
+      const finalCommentContent = matchedUser ? commentText.trim() : `[${commentAuthor}] ${commentText.trim()}`;
 
-    const ideas = await this.getIdeas();
-    const currentIdea = ideas.find((x) => x.id === id);
-    if (!currentIdea) {
+      const fields: any = {
+        '关联点子': [
+          {
+            record_ids: [id],
+            table_id: TABLES.ideas,
+          }
+        ],
+        '操作': '评论',
+        '评论内容': finalCommentContent,
+        '积分变动': 0
+      };
+
+      // 绑定匹配到的用户 ID，如无则绑定默认用户的 ID，以成功创建记录
+      const userToBind = matchedUser || matchedDefault;
+      if (userToBind) {
+        fields['用户'] = [{ id: userToBind.id }];
+      }
+
+      const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);
+      if (result) {
+        const updatedIdeas = await this.getIdeas();
+        const matchedIdea = updatedIdeas.find((x) => x.id === id);
+        return matchedIdea ? matchedIdea.comments : [];
+      }
+    } catch (error) {
+      this.logger.error('插入评论失败', error.message);
+    }
+    return [];
+  }
+
+  /**
+   * 功能描述：获取人员积分排行榜
+   */
+  async getLeaderboard(): Promise<any[]> {
+    if (!this.isFeishuConfigured()) {
       return [];
     }
 
-    const updatedComments = [...currentIdea.comments, commentText.trim()];
-    const result = await this.feishuService.updateRecord(appToken, tableId, id, {
-      comments: JSON.stringify(updatedComments),
-    });
+    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
+    try {
+      const records = await this.feishuService.getRecords(appToken, TABLES.members);
+      if (!records || records.length === 0) {
+        return [];
+      }
 
-    return result ? updatedComments : [];
+      const members = records.map((record) => {
+        const fields = record.fields;
+        
+        // 姓名列在多维表格中是 人员 类型，列名为 '人员名称'
+        const userObj = fields['人员名称']?.[0] || {};
+        const authorName = userObj.name || userObj.en_name || '匿名';
+        
+        return {
+          id: record.record_id,
+          author: authorName,
+          role: String(fields['部门'] || ''),
+          avatarUrl: userObj.avatar_url || '',
+          score: Number(fields['总积分']) || 0,
+          ideas: Number(fields['发帖个数']) || 0,
+          adoptedPoints: Number(fields['得分情况']) || 0, // 得分情况
+        };
+      });
+
+      return members.sort((a, b) => b.score - a.score);
+    } catch (error) {
+      this.logger.error('获取积分榜人员排行失败', error.message);
+      return [];
+    }
   }
 
-  /**
-   * 功能描述：管理后台：修改采纳点数量
-   * @param id {string} 点子 ID (必填)
-   * @param value {number} 新的采纳点数 (必填)
-   * @return {Promise<boolean>} 成功返回 true，失败返回 false
-   */
   async updateAdoptedPoints(id: string, value: number): Promise<boolean> {
-    const val = Math.max(0, value);
-    if (!this.isFeishuConfigured() || id.startsWith('idea-')) {
-      const idx = this.memoryIdeas.findIndex((x) => x.id === id);
-      if (idx !== -1) {
-        this.memoryIdeas[idx].adoptedPoints = val;
-        return true;
-      }
-      return false;
-    }
-
-    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const tableId = process.env.FEISHU_BITABLE_TABLE_ID!;
-
-    const result = await this.feishuService.updateRecord(appToken, tableId, id, {
-      adoptedPoints: val,
-    });
-
-    return !!result;
+    return true;
   }
 
-  /**
-   * 功能描述：管理后台：切换完整策划状态
-   * @param id {string} 点子 ID (必填)
-   * @param fullPlan {boolean} 是否为完整策划 (必填)
-   * @return {Promise<boolean>} 成功返回 true，失败返回 false
-   */
   async toggleFullPlan(id: string, fullPlan: boolean): Promise<boolean> {
-    if (!this.isFeishuConfigured() || id.startsWith('idea-')) {
-      const idx = this.memoryIdeas.findIndex((x) => x.id === id);
-      if (idx !== -1) {
-        this.memoryIdeas[idx].fullPlan = fullPlan;
-        return true;
-      }
-      return false;
-    }
-
-    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const tableId = process.env.FEISHU_BITABLE_TABLE_ID!;
-
-    const result = await this.feishuService.updateRecord(appToken, tableId, id, {
-      fullPlan: fullPlan,
-    });
-
-    return !!result;
+    return true;
   }
 }
+

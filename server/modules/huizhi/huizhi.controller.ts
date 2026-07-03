@@ -13,8 +13,8 @@ export class HuizhiController {
    * @return {any} 基础配置元数据
    */
   @Get('bootstrap')
-  getBootstrap() {
-    return this.huizhiService.getBootstrap();
+  async getBootstrap() {
+    return await this.huizhiService.getBootstrap();
   }
 
   /**
@@ -54,8 +54,11 @@ export class HuizhiController {
    * @return {Promise<{ comments: string[] }>} 包含该想法更新后的所有评论列表
    */
   @Post('ideas/:id/comment')
-  async addComment(@Param('id') id: string, @Body() body: { commentText: string }) {
-    const comments = await this.huizhiService.addComment(id, body.commentText);
+  async addComment(
+    @Param('id') id: string,
+    @Body() body: { commentText: string; author?: string },
+  ) {
+    const comments = await this.huizhiService.addComment(id, body.commentText, body.author);
     return { comments };
   }
 
@@ -81,5 +84,14 @@ export class HuizhiController {
   async toggleFullPlan(@Param('id') id: string, @Body() body: { fullPlan: boolean }) {
     const success = await this.huizhiService.toggleFullPlan(id, body.fullPlan);
     return { success };
+  }
+
+  /**
+   * 功能描述：获取人员积分排行数据
+   * @return {Promise<any[]>} 人员积分排行数据
+   */
+  @Get('leaderboard')
+  async getLeaderboard() {
+    return await this.huizhiService.getLeaderboard();
   }
 }
