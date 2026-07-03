@@ -409,6 +409,12 @@
     color: var(--teal-dark);
   }
   
+  .vote-btn.voted-active {
+    background-color: rgba(220, 38, 38, 0.08) !important;
+    color: #dc2626 !important;
+    border: 1px solid rgba(220, 38, 38, 0.25) !important;
+  }
+  
   .comment-toggle {
     background: #f8f2e7;
     color: #815a18;

@@ -190,6 +190,7 @@ export default function HomePage() {
   // 新增：全局 Toast 与点赞动画状态
   const [toast, setToast] = useState<{ message: string; visible: boolean; type?: 'success' | 'info' }>({ message: '', visible: false });
   const [votedIds, setVotedIds] = useState<string[]>([]);
+  const [votingIds, setVotingIds] = useState<string[]>([]);
 
   // 新增：共创人员登录/实名登记状态
   const [userInfo, setUserInfo] = useState<{ name: string; department: string } | null>(() => {
@@ -485,43 +486,48 @@ ${dinner}
 
   // Actions
   const handleVote = (id: string) => {
+    if (votingIds.includes(id)) return;
+    setVotingIds((prev) => [...prev, id]);
+
     const authorName = userInfo?.name || "匿名";
     const deptName = userInfo?.department || "";
+    
+    const targetIdea = state.ideas.find(x => x.id === id);
+    if (!targetIdea) {
+      setVotingIds((prev) => prev.filter(x => x !== id));
+      return;
+    }
+    
+    // 判定是否已经点过赞
+    const hasVoted = targetIdea.interactions?.some(x => x.user === authorName && x.type === "点赞");
+
     // 1. 触发 Q弹动效
     setVotedIds((prev) => [...prev, id]);
     setTimeout(() => {
       setVotedIds((prev) => prev.filter(x => x !== id));
     }, 1000);
 
-    // 2. 检查本地是否已经点赞过，以决定是【点赞】还是【取消点赞】
-    let isCurrentlyVoted = false;
+    // 2. 乐观双向切换本地状态
     setState((prev) => {
-      const idea = prev.ideas.find((x) => x.id === id);
-      if (idea && idea.interactions) {
-        isCurrentlyVoted = idea.interactions.some(
-          (x: any) => x.type === "点赞" && x.user === authorName
-        );
-      }
-
       const newIdeas = prev.ideas.map((idea) => {
         if (idea.id === id) {
-          let newInteractions;
-          let voteDiff = 1;
-          if (isCurrentlyVoted) {
+          let newInteractions = [];
+          let newVotes = idea.votes;
+          if (hasVoted) {
+            newVotes = Math.max(0, idea.votes - 1);
             newInteractions = (idea.interactions || []).filter(
-              (x: any) => !(x.type === "点赞" && x.user === authorName)
+              x => !(x.user === authorName && x.type === "点赞")
             );
-            voteDiff = -1;
           } else {
+            newVotes = idea.votes + 1;
             newInteractions = [
               ...(idea.interactions || []),
               { user: authorName, type: "点赞", content: "" }
             ];
-            voteDiff = 1;
           }
           return {
             ...idea,
-            votes: Math.max(0, idea.votes + voteDiff),
+            votes: newVotes,
             interactions: newInteractions
           };
         }
@@ -530,9 +536,13 @@ ${dinner}
       return { ...prev, ideas: newIdeas };
     });
 
-    showToast(isCurrentlyVoted ? "已取消点赞" : "点赞成功！感谢您的共创。");
+    if (hasVoted) {
+      showToast("点赞已取消", "info");
+    } else {
+      showToast("点赞成功！感谢您的共创。");
+    }
 
-    // 3. 静默网络请求与刷新 (带上 department)
+    // 3. 静默网络请求，传入姓名及所属单位，完成后释放锁
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/vote`,
       method: "POST",
@@ -543,6 +553,8 @@ ${dinner}
       }
     }).catch((err) => {
       console.error("Failed to vote for idea:", err);
+    }).finally(() => {
+      setVotingIds((prev) => prev.filter(x => x !== id));
     });
   };
 
@@ -575,7 +587,7 @@ ${dinner}
 
     showToast("发表评论成功！已同步至互动中心。");
 
-    // 2. 静默网络请求 (带上 department)
+    // 2. 静默网络请求
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/comment`,
       method: "POST",
@@ -968,9 +980,30 @@ ${dinner}
                     </div>
 
                     <div className="card-actions">
-                      <button className={`vote-btn ${votedIds.includes(idea.id) ? 'voted-scale' : ''}`} type="button" onClick={() => handleVote(idea.id)}>
-                        点赞 {idea.votes}
-                      </button>
+                      {(() => {
+                        const authorName = userInfo?.name || "匿名";
+                        const hasVoted = idea.interactions?.some((x: any) => x.user === authorName && x.type === "点赞");
+                        const isProcessing = votingIds.includes(idea.id);
+                        
+                        return (
+                          <button 
+                            className={`vote-btn ${votedIds.includes(idea.id) ? 'voted-scale' : ''} ${hasVoted ? 'voted-active' : ''}`} 
+                            type="button" 
+                            disabled={isProcessing}
+                            style={{ 
+                              pointerEvents: isProcessing ? 'none' : 'auto', 
+                              opacity: isProcessing ? 0.75 : 1,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }} 
+                            onClick={() => handleVote(idea.id)}
+                          >
+                            <span>{hasVoted ? '❤️' : '🤍'}</span>
+                            <span>点赞 {idea.votes}</span>
+                          </button>
+                        );
+                      })()}
                       <button className="comment-toggle" type="button" onClick={() => toggleCommentSection(idea.id)}>
                         参与互动
                       </button>

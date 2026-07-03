@@ -43,8 +43,8 @@ export class HuizhiController {
    */
   @Post('ideas/:id/vote')
   async voteIdea(@Param('id') id: string, @Body() body: { author?: string; department?: string }) {
-    const success = await this.huizhiService.voteIdea(id, body.author, body.department);
-    return { success };
+    const result = await this.huizhiService.voteIdea(id, body.author, body.department);
+    return result;
   }
 
   /**
