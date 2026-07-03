@@ -8,12 +8,19 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const enablePlatform = Boolean(process.env.SUDA_DATABASE_URL);
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     abortOnError: process.env.NODE_ENV !== 'development',
   });
-  await configureApp(app, { 
-    disableSwagger: true,
-  });
+
+  if (enablePlatform) {
+    await configureApp(app, {
+      disableSwagger: true,
+    });
+  } else {
+    app.enableCors();
+  }
+
   const logger = new Logger('Bootstrap');
   const host = process.env.SERVER_HOST || 'localhost';
   const port = Number(process.env.SERVER_PORT || '3000');
