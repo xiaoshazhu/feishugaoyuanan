@@ -3,7 +3,7 @@ import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBac
 import './HomePage.css';
 
 const STORAGE_KEY = "gaoyuan-ai-huizhi-box-v1";
-const validViews = ["ideas", "info", "submit", "publish", "leaderboard", "roadmap", "admin"];
+const validViews = ["ideas", "info", "submit", "publish", "leaderboard"];
 
 const categories = [
   "活动定位",
@@ -483,48 +483,7 @@ ${dinner}
     setExportBoxValue("");
   };
 
-  // Admin controls
-  const handleAdminAdoptedChange = (id: string, value: number) => {
-    const val = Math.max(0, value);
-    axiosForBackend({
-      url: `/api/huizhi/ideas/${id}/adopted`,
-      method: "POST",
-      data: { value: val }
-    }).then((res) => {
-      if (res.data?.success) {
-        setState((prev) => ({
-          ...prev,
-          ideas: prev.ideas.map((idea) =>
-            idea.id === id ? { ...idea, adoptedPoints: val } : idea
-          )
-        }));
-      }
-    }).catch((err) => {
-      console.error("Failed to update adopted points:", err);
-    });
-  };
 
-  const handleAdminToggleFullPlan = (id: string) => {
-    const currentIdea = state.ideas.find((i) => i.id === id);
-    if (!currentIdea) return;
-    const targetFullPlan = !currentIdea.fullPlan;
-    axiosForBackend({
-      url: `/api/huizhi/ideas/${id}/toggle-full-plan`,
-      method: "POST",
-      data: { fullPlan: targetFullPlan }
-    }).then((res) => {
-      if (res.data?.success) {
-        setState((prev) => ({
-          ...prev,
-          ideas: prev.ideas.map((idea) =>
-            idea.id === id ? { ...idea, fullPlan: targetFullPlan } : idea
-          )
-        }));
-      }
-    }).catch((err) => {
-      console.error("Failed to toggle full plan status:", err);
-    });
-  };
 
   // Metrics
   const totalIdeas = state.ideas.length;
@@ -554,7 +513,6 @@ ${dinner}
             <button className="ghost small" onClick={() => changeView("info")}>活动信息</button>
             <button className="ghost small" onClick={() => changeView("ideas")}>点子广场</button>
             <button className="ghost small" onClick={() => changeView("submit")}>投放想法</button>
-            <button className="ghost small" onClick={() => changeView("admin")}>组委会</button>
           </div>
         </nav>
         <section className="hero-copy">
@@ -600,8 +558,6 @@ ${dinner}
           <button className={`tab ${activeView === 'submit' ? 'active' : ''}`} onClick={() => changeView("submit")}>投放想法</button>
           <button className={`tab ${activeView === 'publish' ? 'active' : ''}`} onClick={() => changeView("publish")}>发布入口</button>
           <button className={`tab ${activeView === 'leaderboard' ? 'active' : ''}`} onClick={() => changeView("leaderboard")}>积分榜</button>
-          <button className={`tab ${activeView === 'roadmap' ? 'active' : ''}`} onClick={() => changeView("roadmap")}>作战图</button>
-          <button className={`tab ${activeView === 'admin' ? 'active' : ''}`} onClick={() => changeView("admin")}>组委会后台</button>
         </section>
 
         {/* View: info */}
@@ -675,7 +631,7 @@ ${dinner}
                 </select>
               </div>
             </div>
-            <div id="ideaList" class="idea-grid">
+            <div id="ideaList" className="idea-grid">
               {visibleIdeas.map((idea) => {
                 const isCommentsOpen = !!commentViewToggle[idea.id];
                 return (
@@ -922,99 +878,7 @@ ${dinner}
           </section>
         )}
 
-        {/* View: roadmap */}
-        {activeView === "roadmap" && (
-          <section id="view-roadmap" className="view active">
-            <div className="section-head">
-              <div>
-                <h2>活动作战图</h2>
-                <p>把会议纪要拆成可征集、可推进、可复盘的主题。</p>
-              </div>
-            </div>
-            <div className="roadmap">
-              <article>
-                <span>01</span>
-                <h3>活动定位</h3>
-                <p>高原安AI效率先锋分享大会，面向有科技头脑、想进步的民营企业核心人员。</p>
-              </article>
-              <article>
-                <span>02</span>
-                <h3>内容结构</h3>
-                <p>轻比赛、重展示，内部精品案例覆盖供应链、财务、绩效、项目管理等场景。</p>
-              </article>
-              <article>
-                <span>03</span>
-                <h3>互动增长</h3>
-                <p>现场提问、投票抽奖、小游戏、AI工具幸运观众，兼顾客户信息收集。</p>
-              </article>
-              <article>
-                <span>04</span>
-                <h3>外部背书</h3>
-                <p>争取飞书产品团队、企业主、行业专家、科技局相关领导参与。</p>
-              </article>
-              <article>
-                <span>05</span>
-                <h3>宣传转化</h3>
-                <p>小红书、抖音、飞书官方渠道预热，直播录播扩大传播，会后AIAA晚餐促进商机。</p>
-              </article>
-              <article>
-                <span>06</span>
-                <h3>合规边界</h3>
-                <p>若挂飞书名，现场不做直接售卖；销售表达聚焦飞书使用方法与应用经验。</p>
-              </article>
-            </div>
-          </section>
-        )}
 
-        {/* View: admin */}
-        {activeView === "admin" && (
-          <section id="view-admin" className="view active">
-            <div className="admin-grid">
-              <div className="panel">
-                <h2>组委会采纳台</h2>
-                <p className="muted">输入采纳点数量或标记完整策划，系统自动更新积分榜。</p>
-                <div id="adminList" className="admin-list">
-                  {state.ideas.map((idea) => (
-                    <article key={idea.id} className="admin-item">
-                      <div>
-                        <h3>{idea.title}</h3>
-                        <p>{idea.author} · {idea.category} · {scoreIdea(idea).toFixed(1)}分</p>
-                      </div>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={idea.adoptedPoints}
-                        aria-label="采纳点数量"
-                        onChange={(e) => handleAdminAdoptedChange(idea.id, Number(e.target.value))}
-                      />
-                      <button
-                        className="secondary full-plan"
-                        onClick={() => handleAdminToggleFullPlan(idea.id)}
-                      >
-                        {idea.fullPlan ? "取消完整策划" : "标记完整策划"}
-                      </button>
-                    </article>
-                  ))}
-                </div>
-              </div>
-              <div className="panel export-panel">
-                <h2>数据流转</h2>
-                <p>当前版本保存在本机浏览器，可导出JSON给飞书多维表格或后续后台导入。</p>
-                <button id="exportBtn" className="secondary" onClick={handleExportData}>导出数据</button>
-                <button id="resetDemoBtn" className="danger" onClick={handleResetDemo}>恢复演示数据</button>
-                <textarea
-                  id="exportBox"
-                  readOnly
-                  rows={10}
-                  placeholder="导出结果会显示在这里"
-                  value={exportBoxValue}
-                  onChange={(e) => setExportBoxValue(e.target.value)}
-                />
-              </div>
-            </div>
-          </section>
-        )}
       </main>
     </div>
   );
