@@ -278,15 +278,13 @@ export class HuizhiService {
       const records = await this.feishuService.getRecords(appToken, TABLES.members);
       if (records) {
         for (const record of records) {
-          const nameList = record.fields['人员名称'] || [];
-          for (const user of nameList) {
-            if (user.name === authorName || user.en_name === authorName) {
-              return {
-                id: user.id,
-                name: user.name,
-                avatar_url: user.avatar_url,
-              };
-            }
+          const nameVal = record.fields['人员名称'] ? String(record.fields['人员名称']).trim() : '';
+          if (nameVal === authorName) {
+            return {
+              id: record.record_id,
+              name: nameVal,
+              avatar_url: '',
+            };
           }
         }
       }
@@ -457,27 +455,14 @@ export class HuizhiService {
       const members = records.map((record) => {
         const fields = record.fields;
         
-        // 姓名列在多维表格中是 人员 类型，列名为 '人员名称'
-        const userObj = fields['人员名称']?.[0] || {};
-        let authorName = userObj.name || userObj.en_name || '';
-        let role = String(fields['所属单位'] || fields['部门'] || '');
-
-        // 智能解码外部用户名，格式为 "所属单位 (真实姓名)"
-        const match = role.match(/^(.*?)\s*\(([^)]+)\)$/);
-        if (match) {
-          role = match[1].trim();
-          authorName = match[2].trim();
-        }
-
-        if (!authorName) {
-          authorName = '匿名';
-        }
+        const authorName = fields['人员名称'] ? String(fields['人员名称']).trim() : '匿名';
+        const role = String(fields['所属单位'] || fields['部门'] || '');
         
         return {
           id: record.record_id,
           author: authorName,
           role: role,
-          avatarUrl: userObj.avatar_url || '',
+          avatarUrl: '',
           score: Number(fields['总积分']) || 0,
           ideas: Number(fields['发帖个数']) || 0,
           adoptedPoints: Number(fields['得分情况']) || 0, // 得分情况
@@ -550,19 +535,9 @@ export class HuizhiService {
       
       const exists = records.some((record) => {
         const fields = record.fields;
-        const userObj = fields['人员名称']?.[0] || {};
-        const authorName = userObj.name || userObj.en_name || '';
+        const authorName = fields['人员名称'] ? String(fields['人员名称']).trim() : '';
         const role = String(fields['所属单位'] || fields['部门'] || '');
-        
-        let matchedAuthor = authorName;
-        let matchedRole = role;
-        const match = role.match(/^(.*?)\s*\(([^)]+)\)$/);
-        if (match) {
-          matchedRole = match[1].trim();
-          matchedAuthor = match[2].trim();
-        }
-        
-        return matchedAuthor === name && matchedRole === department;
+        return authorName === name && role === department;
       });
 
       if (exists) {
@@ -570,18 +545,11 @@ export class HuizhiService {
         return true;
       }
 
-      // 2. 尝试查找在飞书系统中的对应用户 ID
-      const matchedUser = await this.findFeishuUserByName(name);
-      
-      const fields: any = {};
-
-      if (matchedUser) {
-        fields['人员名称'] = [{ id: matchedUser.id }];
-        fields['所属单位'] = department;
-      } else {
-        // 如果是外部人员，采用“所属单位 (真实姓名)”的智能格式存储到“所属单位”文本列中以规避 UserField 限制
-        fields['所属单位'] = `${department} (${name})`;
-      }
+      // 2. 写入多维表格人员表
+      const fields: any = {
+        '人员名称': name,
+        '所属单位': department
+      };
 
       const result = await this.feishuService.createRecord(appToken, TABLES.members, fields);
       return !!result;
