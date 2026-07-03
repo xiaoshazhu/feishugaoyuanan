@@ -191,6 +191,7 @@ export default function HomePage() {
   const [toast, setToast] = useState<{ message: string; visible: boolean; type?: 'success' | 'info' }>({ message: '', visible: false });
   const [votedIds, setVotedIds] = useState<string[]>([]);
   const [votingIds, setVotingIds] = useState<string[]>([]);
+  const [unvotedIds, setUnvotedIds] = useState<string[]>([]);
 
   // 新增：共创人员登录/实名登记状态
   const [userInfo, setUserInfo] = useState<{ name: string; department: string } | null>(() => {
@@ -501,11 +502,18 @@ ${dinner}
     // 判定是否已经点过赞
     const hasVoted = targetIdea.interactions?.some(x => x.user === authorName && x.type === "点赞");
 
-    // 1. 触发 Q弹动效
-    setVotedIds((prev) => [...prev, id]);
-    setTimeout(() => {
-      setVotedIds((prev) => prev.filter(x => x !== id));
-    }, 1000);
+    // 1. 触发 Q弹动效 (已点赞则触发收缩动画，未点赞则触发膨胀动画)
+    if (hasVoted) {
+      setUnvotedIds((prev) => [...prev, id]);
+      setTimeout(() => {
+        setUnvotedIds((prev) => prev.filter(x => x !== id));
+      }, 1000);
+    } else {
+      setVotedIds((prev) => [...prev, id]);
+      setTimeout(() => {
+        setVotedIds((prev) => prev.filter(x => x !== id));
+      }, 1000);
+    }
 
     // 2. 乐观双向切换本地状态
     setState((prev) => {
@@ -987,7 +995,7 @@ ${dinner}
                         
                         return (
                           <button 
-                            className={`vote-btn ${votedIds.includes(idea.id) ? 'voted-scale' : ''} ${hasVoted ? 'voted-active' : ''}`} 
+                            className={`vote-btn ${votedIds.includes(idea.id) ? 'voted-scale' : ''} ${unvotedIds.includes(idea.id) ? 'unvote-scale' : ''} ${hasVoted ? 'voted-active' : ''}`} 
                             type="button" 
                             disabled={isProcessing}
                             style={{ 
