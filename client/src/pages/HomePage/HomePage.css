@@ -937,3 +937,9 @@
   background-color: rgba(0, 0, 0, 0.05) !important;
   color: var(--muted) !important;
 }
+
+@media (max-width: 992px) {
+  .intent-display-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

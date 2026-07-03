@@ -1155,114 +1155,112 @@ ${dinner}
         {/* View: intent (发起人想法) */}
         {activeView === "intent" && (
           <section id="view-intent" className="view active">
-            <div className="section-head">
-              <div>
-                <h2>发起人想法</h2>
-                <p>由高原安、字节跳动、海科科技共同发起，所有投稿都围绕这里的目标自动匹配。</p>
+            <div className="section-head" style={{ borderBottom: 'none', paddingBottom: '0px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #3b82f6', paddingLeft: '12px', margin: 0, fontSize: '1.8rem', fontWeight: 'bold' }}>
+                  发起人想法
+                </h2>
+                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.95rem' }}>
+                  由高原安、字节跳动、海科科技共同发起，所有投稿和智能策划都围绕这里的目标自动匹配。
+                </p>
               </div>
             </div>
 
-            <form onSubmit={handleIntentSubmit} className="panel" style={{ padding: '24px', marginBottom: '24px' }}>
-              <div className="intent-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '20px' }}>
-                
-                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>主办方核心目的</label>
-                  <textarea
-                    rows={6}
-                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
-                    value={intentInput.purpose}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, purpose: e.target.value }))}
-                    placeholder="请输入主办方核心目的..."
-                  />
+            <div className="intent-display-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '12px' }}>
+              {/* 卡片 01: 主办方核心目的 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  🎯
                 </div>
-
-                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>希望达成的效果</label>
-                  <textarea
-                    rows={6}
-                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
-                    value={intentInput.outcome}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, outcome: e.target.value }))}
-                    placeholder="请输入希望达成的效果..."
-                  />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>主办方核心目的</h3>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>01</span>
+                  </div>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.7', textAlign: 'justify' }}>
+                    高原安、字节跳动、海科科技共同发起，打造一场面向约500位企业核心人员的AI效率先锋活动，展示AI和飞书在企业管理中的实战价值，提升行业影响力并促进高质量商机转化。
+                  </p>
                 </div>
-
-                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>投入资源与边界</label>
-                  <textarea
-                    rows={6}
-                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
-                    value={intentInput.resources}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, resources: e.target.value }))}
-                    placeholder="请输入投入资源与边界条件..."
-                  />
-                </div>
-
-                <div className="intent-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', color: 'var(--foreground)' }}>智能策划偏好关键词</label>
-                  <textarea
-                    rows={6}
-                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)', color: 'var(--foreground)', resize: 'vertical', lineHeight: '1.6' }}
-                    value={intentInput.keywords}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, keywords: e.target.value }))}
-                    placeholder="请输入智能策划偏好关键词，多个词之间用逗号分隔..."
-                  />
-                </div>
-
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <button
-                  type="submit"
-                  disabled={isSavingIntent}
-                  className="primary"
-                  style={{
-                    backgroundColor: '#076046',
-                    color: '#fff',
-                    padding: '10px 20px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: isSavingIntent ? 'not-allowed' : 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {isSavingIntent ? '正在保存...' : '保存发起人想法并刷新智能策划'}
-                </button>
-                {saveStatus && (
-                  <span style={{ fontSize: '0.9rem', color: saveStatus.includes('成功') ? '#10b981' : '#f59e0b', fontWeight: '500' }}>
-                    {saveStatus}
-                  </span>
-                )}
+              {/* 卡片 02: 希望达成的效果 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  🏆
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>希望达成的效果</h3>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>02</span>
+                  </div>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
+                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
+                      <span>让企业主看见真实案例、愿意交流、愿意留下需求；</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
+                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
+                      <span>让飞书效率先锋决赛形成传播亮点；</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
+                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
+                      <span>让AIAA晚餐承接30位企业主深度交流；</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
+                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
+                      <span>最终沉淀一份可执行、可传播、可复盘的总策划。</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-            </form>
 
-            {/* 联合发起人职责展示 */}
-            <div className="sponsor-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-              {bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0 ? (
-                bootstrapConfig.sponsors.map((item: any, idx: number) => (
-                  <div key={idx} className="panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>{item.企业名称}</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>{item.企业描述}</p>
+              {/* 卡片 03: 投入资源与边界 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  👥
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>投入资源与边界</h3>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>03</span>
                   </div>
-                ))
-              ) : (
-                <>
-                  <div className="panel" style={{ padding: '20px' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>高原安</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>总发起、客户经营、企业管理实战案例、AIAA晚餐转化。</p>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.7', textAlign: 'justify' }}>
+                    活动时间为2026年9月3日全天，地点成都，总人数约500人。<br />
+                    <span style={{ color: '#2563eb', fontWeight: 'bold' }}>上午 9:00-12:00</span>，<span style={{ color: '#2563eb', fontWeight: 'bold' }}>12:00-13:30</span> 自助餐交流，<br />
+                    下午 <span style={{ color: '#2563eb', fontWeight: 'bold' }}>13:30-17:30</span>，间隙插入共<span style={{ color: '#2563eb', fontWeight: 'bold' }}>90分钟</span>热场活动和问题解答，<span style={{ color: '#2563eb', fontWeight: 'bold' }}>18:00-20:00</span> AIAA晚餐，自愿AA报名，每人<span style={{ color: '#2563eb', fontWeight: 'bold' }}>198元</span>，约30人，主要针对企业主。<br />
+                    现场若挂飞书名，不做直接商业售卖。
+                  </p>
+                </div>
+              </div>
+
+              {/* 卡片 04: 智能策划偏好关键词 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  🔍
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>智能策划偏好关键词</h3>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>04</span>
                   </div>
-                  <div className="panel" style={{ padding: '20px' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>字节跳动</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>飞书站台、高级分享、数字化应用未来设想、原厂背书。</p>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                    {[
+                      "AI企业管理", "飞书效率", "实战分享", "效率先锋决赛", 
+                      "企业主", "商机转化", "客户信息收集", "互动热场", 
+                      "问题解答", "AIAA晚餐", "字节跳动高级分享", "合规", 
+                      "成都", "500人"
+                    ].map((kw, kwIdx) => (
+                      <span key={kwIdx} style={{ background: 'var(--accent)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.82rem', color: 'var(--foreground)' }}>
+                        {kw}
+                      </span>
+                    ))}
                   </div>
-                  <div className="panel" style={{ padding: '20px' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>海科科技</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>活动策划执行、客户邀约、现场互动、内容包装与传播。</p>
-                  </div>
-                </>
-              )}
+                </div>
+              </div>
             </div>
           </section>
         )}
