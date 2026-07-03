@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "concurrently -n \"server,client\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "NODE_ENV=development FORCE_AUTHN_INNERAPI_DOMAIN=http://localhost:3000 nest start --watch",
+    "dev:server": "NODE_ENV=development SERVER_HOST=127.0.0.1 SERVER_PORT=3001 FORCE_AUTHN_INNERAPI_DOMAIN=http://127.0.0.1:3001 nest start --watch",
     "dev:client": "NODE_ENV=development vite --config vite.config.ts",
     "gen:db-schema": "npx -y @lark-apaas/db-schema-sync@latest --output server/database/schema.ts --export-custom-types",
     "gen:openapi": "echo 'UNSUPPORTED, SKIP'",
