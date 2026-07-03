@@ -556,9 +556,7 @@ ${dinner}
       method: "POST",
       data: { author: authorName, department: deptName }
     }).then((res) => {
-      if (res.data?.success) {
-        refreshAllData();
-      }
+      // 成功后由前台 Optimistic UI 状态完全接管并锁定，无需立即全局刷新，规避飞书写入同步延迟回滚问题
     }).catch((err) => {
       console.error("Failed to vote for idea:", err);
     }).finally(() => {
@@ -603,7 +601,6 @@ ${dinner}
     }).then((res) => {
       if (res.data?.comments) {
         showToast("发表评论成功！已同步至互动中心。");
-        refreshAllData();
       } else {
         showToast("评论失败，请重试", "info");
       }
