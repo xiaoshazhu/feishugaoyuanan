@@ -943,3 +943,33 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* 投放想法小菊花 Loading 特效 */
+@keyframes spin-mini {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner-mini {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin-mini 0.8s linear infinite;
+}
+
+/* 提交想法按钮悬停微放大与点击微缩弹性交互 */
+#ideaForm button.primary {
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#ideaForm button.primary:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(7, 96, 70, 0.2);
+}
+
+#ideaForm button.primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}

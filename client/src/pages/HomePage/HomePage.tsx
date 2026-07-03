@@ -614,48 +614,32 @@ ${dinner}
   const handleIdeaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmittingIdea) return;
-
-    const authorName = userInfo?.name || newIdea.author || "共创人";
-    const deptName = userInfo?.department || newIdea.role || "未登记";
+    setIsSubmittingIdea(true);
 
     const payload = {
-      author: authorName.trim(),
-      role: deptName.trim(),
+      author: newIdea.author.trim(),
+      role: newIdea.role.trim(),
       title: newIdea.title.trim(),
       category: newIdea.category,
       phase: newIdea.phase,
       content: newIdea.content.trim()
     };
-
-    setIsSubmittingIdea(true);
-
     axiosForBackend({
       url: "/api/huizhi/ideas",
       method: "POST",
       data: payload
     }).then((res) => {
       if (res.data) {
-        // 1. 乐观更新：将新点子瞬间塞入列表最前方，实现 0ms 置顶现身
-        setState((prev) => ({
-          ...prev,
-          ideas: [res.data, ...(prev.ideas || [])]
-        }));
-
-        // 2. 清空表单内容，恢复初始分类与阶段
+        showToast("🎉 想法投递成功！感谢您的共创。");
         setNewIdea({
-          author: authorName,
-          role: deptName,
+          author: userInfo?.name || "",
+          role: userInfo?.department || "",
           title: "",
           category: categories[0],
           phase: "方案定稿前",
           content: ""
         });
-
-        // 3. 弹窗提示并跳回点子广场
-        showToast("想法投递成功！已成功载入点子广场");
         changeView("ideas");
-        
-        // 4. 异步静默拉取飞书最新同步数据
         refreshAllData();
       }
     }).catch((err) => {
@@ -1142,17 +1126,25 @@ ${dinner}
                   </select>
                 </label>
                 <button 
-                  className="primary" 
-                  type="submit" 
+                  className={`primary ${isSubmittingIdea ? 'submitting' : ''}`} 
+                  type="submit"
                   disabled={isSubmittingIdea}
                   style={{
-                    opacity: isSubmittingIdea ? 0.7 : 1,
-                    cursor: isSubmittingIdea ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease',
-                    position: 'relative'
+                    position: 'relative',
+                    pointerEvents: isSubmittingIdea ? 'none' : 'auto',
+                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
                   }}
                 >
-                  {isSubmittingIdea ? "正在投递想法到汇智箱..." : "投进汇智箱"}
+                  {isSubmittingIdea ? (
+                    <>
+                      <span className="spinner-mini"></span>
+                      正在投递中...
+                    </>
+                  ) : "投进汇智箱"}
                 </button>
               </form>
 
