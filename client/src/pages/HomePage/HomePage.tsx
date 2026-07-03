@@ -530,7 +530,7 @@ ${dinner}
             newVotes = idea.votes + 1;
             newInteractions = [
               ...(idea.interactions || []),
-              { user: authorName, type: "点赞", content: "" }
+              { id: `temp-vote-${Date.now()}-${Math.random()}`, user: authorName, type: "点赞", content: "" }
             ];
           }
           return {
@@ -576,7 +576,7 @@ ${dinner}
         if (idea.id === id) {
           const newInteractions = [
             ...(idea.interactions || []),
-            { user: authorName, type: "评论", content: text.trim() }
+            { id: `temp-comment-${Date.now()}-${Math.random()}`, user: authorName, type: "评论", content: text.trim() }
           ];
           const newComments = [
             ...(idea.comments || []),
@@ -952,7 +952,7 @@ ${dinner}
                           
                           return (
                             <span
-                              key={itemIdx}
+                              key={inter.id || `temp-idx-${itemIdx}`}
                               className="danmaku-item-v2"
                               style={{
                                 position: 'absolute',

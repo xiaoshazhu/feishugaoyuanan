@@ -204,6 +204,7 @@ export class HuizhiService {
           const content = String(x.fields['评论内容'] || '').trim();
 
           return {
+            id: x.record_id,
             user: uName,
             type: op,
             content: content
