@@ -1179,8 +1179,7 @@ ${dinner}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>主办方核心目的</h3>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>01</span>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>01: 主办方核心目的</h3>
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
                   <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.7', textAlign: 'justify' }}>
@@ -1196,8 +1195,7 @@ ${dinner}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>希望达成的效果</h3>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>02</span>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>02: 希望达成的效果</h3>
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
                   {(() => {
@@ -1224,8 +1222,7 @@ ${dinner}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>投入资源与边界</h3>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>03</span>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>03: 投入资源与边界</h3>
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
                   {(() => {
@@ -1258,8 +1255,7 @@ ${dinner}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>智能策划偏好关键词</h3>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>04</span>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>04: 智能策划偏好</h3>
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
                   {(() => {
