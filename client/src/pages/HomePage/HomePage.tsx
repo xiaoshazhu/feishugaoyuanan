@@ -1171,45 +1171,77 @@ ${dinner}
               </div>
             </div>
 
-            {/* 共同发起企业职责极简列表 */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px dashed var(--border)' }}>
-              {bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0 ? (
-                bootstrapConfig.sponsors.map((item: any, idx: number) => (
-                  <div key={idx} style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
-                      {item.企业名称}
+            {/* 共同发起企业职责专属渐变色条卡片组 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+              {(() => {
+                const themeMap: { [key: string]: { bg: string, border: string, text: string } } = {
+                  "高原安": {
+                    bg: "linear-gradient(135deg, #f0fdf4 0%, #e6f9ed 100%)",
+                    border: "#10b981",
+                    text: "#065f46"
+                  },
+                  "字节跳动": {
+                    bg: "linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%)",
+                    border: "#3b82f6",
+                    text: "#1e40af"
+                  },
+                  "海科科技": {
+                    bg: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+                    border: "#f59e0b",
+                    text: "#92400e"
+                  }
+                };
+
+                const defaultTheme = {
+                  bg: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+                  border: "#64748b",
+                  text: "#334155"
+                };
+
+                const getTheme = (name: string) => {
+                  for (const key of Object.keys(themeMap)) {
+                    if (name.includes(key)) return themeMap[key];
+                  }
+                  return defaultTheme;
+                };
+
+                const sponsorsList = bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0
+                  ? bootstrapConfig.sponsors
+                  : [
+                      { 企业名称: "高原安", 企业描述: "总发起、客户经营、企业管理实战案例、AIAA晚餐转化。" },
+                      { 企业名称: "字节跳动", 企业描述: "飞书站台、高级分享、数字化应用未来设想、原厂背书。" },
+                      { 企业名称: "海科科技", 企业描述: "活动策划执行、客户邀约、现场互动、内容包装与传播。" }
+                    ];
+
+                return sponsorsList.map((item: any, idx: number) => {
+                  const theme = getTheme(item.企业名称);
+                  return (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        background: theme.bg, 
+                        borderLeft: `4px solid ${theme.border}`, 
+                        borderRadius: '10px', 
+                        padding: '20px', 
+                        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.015)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        borderTop: '1px solid rgba(0,0,0,0.01)',
+                        borderRight: '1px solid rgba(0,0,0,0.01)',
+                        borderBottom: '1px solid rgba(0,0,0,0.01)'
+                      }}
+                    >
+                      <h4 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 'bold', color: theme.text, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {item.企业名称}
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '0.86rem', color: '#475569', lineHeight: '1.6' }}>
+                        {item.企业描述}
+                      </p>
                     </div>
-                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>
-                      {item.企业描述}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <>
-                  <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
-                      高原安
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>总发起、客户经营、企业管理实战案例、AIAA晚餐转化。</p>
-                  </div>
-                  <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
-                      字节跳动
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>飞书站台、高级分享、数字化应用未来设想、原厂背书。</p>
-                  </div>
-                  <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
-                      海科科技
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)', lineHeight: '1.5' }}>活动策划执行、客户邀约、现场互动、内容包装与传播。</p>
-                  </div>
-                </>
-              )}
+                  );
+                });
+              })()}
             </div>
 
             <div className="intent-display-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '12px' }}>
