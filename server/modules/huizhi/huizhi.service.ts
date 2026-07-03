@@ -156,9 +156,15 @@ export class HuizhiService {
         const fields = record.fields;
         const recordId = record.record_id;
         
-        // 姓名是飞书人员字段
-        const authorObj = fields['姓名']?.[0] || {};
-        let authorName = authorObj.name || authorObj.en_name || '';
+        // 姓名是单行文本或飞书人员字段
+        let authorName = '';
+        const rawName = fields['姓名'];
+        if (typeof rawName === 'string') {
+          authorName = rawName.trim();
+        } else if (Array.isArray(rawName)) {
+          const authorObj = rawName[0] || {};
+          authorName = authorObj.name || authorObj.en_name || '';
+        }
         let role = String(fields['部门'] || '');
 
         if (!authorName) {
@@ -326,26 +332,16 @@ export class HuizhiService {
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
     
-    // 匹配飞书多维表格中是否存在该用户
-    const matchedUser = await this.findFeishuUserByName(newIdea.author);
-
     const fields: any = {
       '点子标题': newIdea.title,
       '点子详情': newIdea.content,
       '建议分类主': newIdea.category,
       '建议分类副': newIdea.phase,
+      '姓名': newIdea.author,
+      '部门': newIdea.role,
       '点子评分': 0,
       '点子采纳': null
     };
-
-    if (matchedUser) {
-      fields['姓名'] = [{ id: matchedUser.id }];
-      fields['部门'] = newIdea.role;
-    } else {
-      // 匹配不到时的兼容：写入部门字段为 "技术组 (王某测试)"，前端 getIdeas 会反向解析
-      fields['部门'] = `${newIdea.role} (${newIdea.author})`;
-      // '姓名' 留空，避免 UserFieldConvFail
-    }
 
     try {
       const record = await this.feishuService.createRecord(appToken, TABLES.ideas, fields);
