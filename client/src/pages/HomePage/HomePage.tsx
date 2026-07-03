@@ -785,7 +785,6 @@ ${dinner}
           <h1>把每一个好点子，变成可采纳、可计分、可兑换的活动资产。</h1>
           <div className="hero-metrics" aria-label="活动关键指标">
             <span><b id="metricIdeas">{totalIdeas}</b>条建议</span>
-            <span><b id="metricAdopted">{totalAdoptedPoints.toFixed(1)}</b>个采纳得分</span>
             <span><b id="metricPeople">{totalPeople}</b>位共创者</span>
           </div>
         </section>
@@ -817,7 +816,14 @@ ${dinner}
             <h2>从飞书群、工作台或多维表格进入汇智箱</h2>
             <p>适合放在活动筹备群公告、飞书工作台快捷入口、客户报名表提交后页面，也可以嵌入飞书文档作为共创入口。</p>
           </div>
-          <a className="primary link-button" href="/feishu-entry">打开飞书入口页</a>
+          <a 
+            className="primary link-button" 
+            href="https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=4aelfec0-d1d9-445d-aaa7-44a3fe85a204" 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            打开飞书群聊
+          </a>
         </section>
 
         <section className="tabs" aria-label="视图切换">
@@ -1493,7 +1499,7 @@ ${dinner}
                     <div>
                       <h3>{person.author} <small>{person.role || '共创先锋'}</small></h3>
                       <p className="muted">
-                        {person.ideas}条建议 · {person.adoptedPoints.toFixed(1)}分得分情况
+                        {person.ideas}条共创建议
                       </p>
                     </div>
                     <strong className="leader-score">{person.score.toFixed(1)} 分</strong>
