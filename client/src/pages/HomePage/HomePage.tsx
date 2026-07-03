@@ -1148,33 +1148,120 @@ ${dinner}
                 </button>
               </form>
 
-              <aside className="panel reward-panel">
-                <h2>计分规则</h2>
-                <ul>
-                  {bootstrapConfig.rules && bootstrapConfig.rules.length > 0 ? (
-                    bootstrapConfig.rules.map((rule: any, idx: number) => (
-                      <li key={idx}>
-                        <strong>{rule.积分规则}</strong>
-                        <span>{Number(rule.分数变动) > 0 ? `+${rule.分数变动}` : rule.分数变动} 分</span>
-                      </li>
-                    ))
-                  ) : (
-                    <>
-                      <li><strong>提交</strong><span>+1 分</span></li>
-                      <li><strong>被点赞</strong><span>+0.2 分/赞</span></li>
-                      <li><strong>采纳点</strong><span>+5 分/点</span></li>
-                      <li><strong>完整策划被采用</strong><span>+20 分</span></li>
-                    </>
-                  )}
-                </ul>
-                <h3>奖品兑换</h3>
-                {bootstrapConfig.awards && bootstrapConfig.awards.length > 0 ? (
-                  <p>
-                    {bootstrapConfig.awards.map((award: any) => `${award.所需积分}分兑换${award.奖品名称}`).join('，')}。
-                  </p>
-                ) : (
-                  <p>30分兑换活动伴手礼，60分兑换定制纪念杯，100分兑换AI效率工具会员或晚餐交流席位优先权。</p>
-                )}
+              <aside className="panel reward-panel" style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  📊 计分规则
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {(() => {
+                    const rulesList = bootstrapConfig.rules && bootstrapConfig.rules.length > 0
+                      ? bootstrapConfig.rules
+                      : [
+                          { 积分规则: "提交想法", 分数变动: "1" },
+                          { 积分规则: "被点赞", 分数变动: "0.2" },
+                          { 积分规则: "采纳点", 分数变动: "5" },
+                          { 积分规则: "完整策划被采用", 分数变动: "20" }
+                        ];
+
+                    return rulesList.map((rule: any, idx: number) => {
+                      const points = Number(rule.分数变动 || 0);
+                      let badgeBg = '#e8f0fe';
+                      let badgeColor = '#1a73e8';
+                      if (points >= 10) {
+                        badgeBg = '#fef7e0';
+                        badgeColor = '#b06000';
+                      } else if (points >= 1) {
+                        badgeBg = '#e6f4ea';
+                        badgeColor = '#137333';
+                      }
+
+                      return (
+                        <div 
+                          key={idx} 
+                          style={{ 
+                            background: '#f8fafc', 
+                            borderRadius: '8px', 
+                            padding: '10px 14px', 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            border: '1px solid rgba(0,0,0,0.03)'
+                          }}
+                        >
+                          <strong style={{ fontSize: '0.88rem', fontWeight: '500', color: '#334155' }}>
+                            {rule.积分规则}
+                          </strong>
+                          <span style={{ 
+                            fontSize: '0.82rem', 
+                            fontWeight: 'bold', 
+                            background: badgeBg, 
+                            color: badgeColor, 
+                            padding: '2px 8px', 
+                            borderRadius: '12px' 
+                          }}>
+                            {points > 0 ? `+${points}` : points} 分
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
+                <h2 style={{ margin: '12px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🎁 奖池列表
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {(() => {
+                    const awardsList = bootstrapConfig.awards && bootstrapConfig.awards.length > 0
+                      ? bootstrapConfig.awards
+                      : [
+                          { 奖品名称: "活动伴手礼", 所需积分: "30", 礼品个数: "100" },
+                          { 奖品名称: "定制纪念杯", 所需积分: "60", 礼品个数: "50" },
+                          { 奖品名称: "AI效率工具会员/晚餐交流", 所需积分: "100", 礼品个数: "10" }
+                        ];
+
+                    return awardsList.map((award: any, idx: number) => {
+                      return (
+                        <div 
+                          key={idx} 
+                          style={{ 
+                            background: '#ffffff', 
+                            border: '1px solid #e2e8f0', 
+                            borderRadius: '10px', 
+                            padding: '12px 16px', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '6px',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.01)',
+                            position: 'relative'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>🎁</span>
+                              {award.奖品名称}
+                            </div>
+                            <span style={{ 
+                              fontSize: '0.82rem', 
+                              fontWeight: 'bold', 
+                              color: '#ef4444', 
+                              background: '#fee2e2', 
+                              padding: '2px 8px', 
+                              borderRadius: '12px' 
+                            }}>
+                              {award.所需积分} 积分
+                            </span>
+                          </div>
+                          {award.礼品个数 && (
+                            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                              剩余限量: <span style={{ fontWeight: '500', color: '#334155' }}>{award.礼品个数}</span> 份
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </aside>
             </div>
           </section>
