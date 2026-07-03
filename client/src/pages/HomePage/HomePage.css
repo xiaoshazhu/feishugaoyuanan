@@ -973,3 +973,13 @@
 #ideaForm button.primary:active:not(:disabled) {
   transform: translateY(0) scale(0.98);
 }
+
+/* 积分榜卡片悬浮浮起与高档阴影动效 */
+.leader-row-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+.leader-row-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
+}

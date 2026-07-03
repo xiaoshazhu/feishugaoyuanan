@@ -1484,29 +1484,152 @@ ${dinner}
                 <p>公开透明，直接对接多维表格人员榜，让“参与感”变成持续动力。</p>
               </div>
             </div>
-            <div id="leaderboard" className="leaderboard">
+            <div id="leaderboard" className="leaderboard" style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '800px', margin: '0 auto' }}>
               {leaderboardData && leaderboardData.length > 0 ? (
-                leaderboardData.map((person, index) => (
-                  <article key={person.id || index} className="leader-row" style={{ display: 'flex', alignItems: 'center' }}>
-                    <span className="rank">{index + 1}</span>
-                    {person.avatarUrl && (
-                      <img 
-                        src={person.avatarUrl} 
-                        alt={person.author} 
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', marginRight: '12px', border: '1px solid var(--border)' }} 
-                      />
-                    )}
-                    <div>
-                      <h3>{person.author} <small>{person.role || '共创先锋'}</small></h3>
-                      <p className="muted">
-                        {person.ideas}条共创建议
-                      </p>
-                    </div>
-                    <strong className="leader-score">{person.score.toFixed(1)} 分</strong>
-                  </article>
-                ))
+                leaderboardData.map((person, index) => {
+                  const rank = index + 1;
+                  
+                  let rowBg = '#ffffff';
+                  let rowBorderLeft = '4px solid #e2e8f0';
+                  let rankBg = 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)';
+                  let rankColor = '#ffffff';
+                  let rankEmoji = '';
+
+                  if (rank === 1) {
+                    rowBg = 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)';
+                    rowBorderLeft = '4px solid #fbbf24';
+                    rankBg = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                    rankColor = '#ffffff';
+                    rankEmoji = '👑';
+                  } else if (rank === 2) {
+                    rowBg = 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
+                    rowBorderLeft = '4px solid #94a3b8';
+                    rankBg = 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)';
+                    rankColor = '#ffffff';
+                  } else if (rank === 3) {
+                    rowBg = 'linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%)';
+                    rowBorderLeft = '4px solid #b45309';
+                    rankBg = 'linear-gradient(135deg, #edc4a1 0%, #b45309 100%)';
+                    rankColor = '#ffffff';
+                  } else {
+                    rankBg = '#f1f5f9';
+                    rankColor = '#64748b';
+                  }
+
+                  return (
+                    <article 
+                      key={person.id || index} 
+                      className="leader-row-card"
+                      style={{ 
+                        background: rowBg, 
+                        borderLeft: rowBorderLeft,
+                        borderRadius: '12px',
+                        padding: '16px 20px',
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.015)',
+                        display: 'flex', 
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.3s ease',
+                        borderTop: '1px solid rgba(0, 0, 0, 0.01)',
+                        borderRight: '1px solid rgba(0, 0, 0, 0.01)',
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.01)',
+                        position: 'relative'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                        {/* 排名圆形徽章 */}
+                        <div style={{ 
+                          width: '38px', 
+                          height: '38px', 
+                          borderRadius: '50%', 
+                          background: rankBg, 
+                          color: rankColor, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          fontWeight: 'bold', 
+                          fontSize: '0.95rem',
+                          flexShrink: 0,
+                          boxShadow: rank <= 3 ? '0 3px 8px rgba(0,0,0,0.1)' : 'none',
+                          position: 'relative'
+                        }}>
+                          {rankEmoji && (
+                            <span style={{ position: 'absolute', top: '-11px', left: '9px', fontSize: '1.1rem', transform: 'rotate(-15deg)' }}>
+                              {rankEmoji}
+                            </span>
+                          )}
+                          {rank}
+                        </div>
+
+                        {/* 头像 */}
+                        {person.avatarUrl ? (
+                          <img 
+                            src={person.avatarUrl} 
+                            alt={person.author} 
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.08)', flexShrink: 0 }} 
+                          />
+                        ) : (
+                          <div style={{ 
+                            width: '40px', 
+                            height: '40px', 
+                            borderRadius: '50%', 
+                            background: '#e2e8f0', 
+                            color: '#475569', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            fontWeight: 'bold', 
+                            fontSize: '1rem',
+                            border: '2px solid #fff',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                            flexShrink: 0
+                          }}>
+                            {person.author ? person.author.substring(0, 1) : '?'}
+                          </div>
+                        )}
+
+                        {/* 人员元数据 */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 'bold', color: '#1e293b' }}>
+                              {person.author}
+                            </h3>
+                            {person.role && (
+                              <span style={{ 
+                                fontSize: '0.72rem', 
+                                fontWeight: '500', 
+                                color: '#0284c7', 
+                                background: '#e0f2fe', 
+                                borderRadius: '4px', 
+                                padding: '1px 6px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {person.role}
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
+                            💡 {person.ideas} 条共创建议
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 积分总得分 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          共创积分
+                        </span>
+                        <strong style={{ fontSize: '1.35rem', fontWeight: '800', color: rank === 1 ? '#d97706' : '#1e293b', lineHeight: '1' }}>
+                          {person.score.toFixed(1)} <span style={{ fontSize: '0.82rem', fontWeight: '500', color: '#64748b' }}>分</span>
+                        </strong>
+                      </div>
+                    </article>
+                  );
+                })
               ) : (
-                <p>暂无排行榜数据</p>
+                <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8', background: '#fff', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  暂无排行榜数据
+                </div>
               )}
             </div>
           </section>
