@@ -11,12 +11,6 @@ export class ViewController {
       throw new NotFoundException(`Cannot GET ${req.path}`);
     }
 
-    const useDevClient =
-      process.env.NODE_ENV === 'development' && !process.env.SUDA_DATABASE_URL;
-    if (useDevClient) {
-      return res.redirect('http://127.0.0.1:8080/client/');
-    }
-
     // you can add custom render params here
     const platformData = req.__platform_data__ ?? {};
     return res.render('index', {
