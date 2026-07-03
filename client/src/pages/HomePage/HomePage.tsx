@@ -186,6 +186,23 @@ export default function HomePage() {
   const [publishInput, setPublishInput] = useState<Publish>({ ...state.publish });
   const [copyStatus, setCopyStatus] = useState("");
   const [exportBoxValue, setExportBoxValue] = useState("");
+  
+  // 新增：全局 Toast 与点赞动画状态
+  const [toast, setToast] = useState<{ message: string; visible: boolean; type?: 'success' | 'info' }>({ message: '', visible: false });
+  const [votedIds, setVotedIds] = useState<string[]>([]);
+  
+  const showToast = useCallback((message: string, type: 'success' | 'info' = 'success') => {
+    setToast({ message, visible: true, type });
+  }, []);
+
+  useEffect(() => {
+    if (toast.visible) {
+      const timer = setTimeout(() => {
+        setToast((prev) => ({ ...prev, visible: false }));
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.visible]);
 
   // Save state on update
   useEffect(() => {
@@ -410,16 +427,26 @@ ${dinner}
   // Actions
   const handleVote = (id: string) => {
     const authorName = newIdea.author.trim() || "王迅";
+    // Q弹反馈缩放动画触发
+    setVotedIds((prev) => [...prev, id]);
+    setTimeout(() => {
+      setVotedIds((prev) => prev.filter(x => x !== id));
+    }, 1000);
+
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/vote`,
       method: "POST",
       data: { author: authorName }
     }).then((res) => {
       if (res.data?.success) {
+        showToast("点赞成功！感谢您的共创。");
         refreshAllData();
+      } else {
+        showToast("点赞失败，请稍后重试", "info");
       }
     }).catch((err) => {
       console.error("Failed to vote for idea:", err);
+      showToast("操作出错，请检查网络", "info");
     });
   };
 
@@ -432,10 +459,14 @@ ${dinner}
       data: { commentText: text.trim(), author: authorName }
     }).then((res) => {
       if (res.data?.comments) {
+        showToast("发表评论成功！已同步至互动中心。");
         refreshAllData();
+      } else {
+        showToast("评论失败，请重试", "info");
       }
     }).catch((err) => {
       console.error("Failed to add comment:", err);
+      showToast("发表评论失败", "info");
     });
   };
 
@@ -739,35 +770,69 @@ ${dinner}
                         完整策划
                       </div>
                     )}
+                    {/* 滚动弹幕区 */}
+                    <div className="danmaku-container">
+                      {idea.interactions && idea.interactions.length > 0 ? (
+                        <div className="danmaku-track">
+                          {[...idea.interactions, ...idea.interactions].map((inter: any, itemIdx: number) => (
+                            <span key={itemIdx} className="danmaku-item">
+                              {inter.type === '点赞' ? (
+                                <>❤️ <strong>{inter.user}</strong> 点赞了此想法</>
+                              ) : (
+                                <>💬 <strong>{inter.user}</strong>：<span>{inter.content}</span></>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.82rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          💡 暂无动态，点击下方按钮参与第一条互动！
+                        </span>
+                      )}
+                    </div>
+
                     <div className="card-actions">
-                      <button className="vote-btn" type="button" onClick={() => handleVote(idea.id)}>
+                      <button className={`vote-btn ${votedIds.includes(idea.id) ? 'voted-scale' : ''}`} type="button" onClick={() => handleVote(idea.id)}>
                         点赞 {idea.votes}
                       </button>
                       <button className="comment-toggle" type="button" onClick={() => toggleCommentSection(idea.id)}>
-                        评论 {idea.comments.length}
+                        评论 {idea.votes + (idea.comments ? idea.comments.length : 0) > 0 ? '互动' : '建议'}
                       </button>
                     </div>
                     {isCommentsOpen && (
-                      <div className="comments">
-                        <div className="comment-list">
-                          {idea.comments.map((comment, index) => (
-                            <p key={index}>{comment}</p>
-                          ))}
-                        </div>
-                        <form
-                          className="comment-form"
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            const form = e.currentTarget;
-                            const input = form.querySelector('input') as HTMLInputElement;
-                            handleAddComment(idea.id, input.value);
-                            input.value = "";
+                      <form
+                        className="comment-inline-form"
+                        style={{ display: 'flex', gap: '8px', marginTop: '12px', padding: '8px 12px', background: 'var(--accent)', borderRadius: '6px', border: '1px solid var(--border)' }}
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const form = e.currentTarget;
+                          const input = form.querySelector('input') as HTMLInputElement;
+                          handleAddComment(idea.id, input.value);
+                          input.value = "";
+                          toggleCommentSection(idea.id);
+                        }}
+                      >
+                        <input
+                          placeholder="写下你对该想法的互动建议..."
+                          required
+                          style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--background)', color: 'var(--foreground)', fontSize: '0.9rem' }}
+                        />
+                        <button
+                          type="submit"
+                          style={{
+                            padding: '6px 16px',
+                            background: 'var(--primary)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.85rem'
                           }}
                         >
-                          <input placeholder="写一句补充建议" required />
-                          <button type="submit">发送</button>
-                        </form>
-                      </div>
+                          发送
+                        </button>
+                      </form>
                     )}
                   </article>
                 );
@@ -1042,6 +1107,33 @@ ${dinner}
 
 
       </main>
+
+      {/* 全局 Toast 通知弹窗 */}
+      {toast.visible && (
+        <div
+          className="toast-popup"
+          style={{
+            position: 'fixed',
+            bottom: '32px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: toast.type === 'success' ? '#076046' : 'rgba(0, 0, 0, 0.85)',
+            color: '#fff',
+            padding: '12px 28px',
+            borderRadius: '50px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.95rem',
+            fontWeight: 'bold',
+            animation: 'toast-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+          }}
+        >
+          {toast.type === 'success' ? '✨' : 'ℹ️'} {toast.message}
+        </div>
+      )}
     </div>
   );
 }

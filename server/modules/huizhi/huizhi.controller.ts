@@ -42,8 +42,8 @@ export class HuizhiController {
    * @return {Promise<{ success: boolean }>} 是否点赞成功
    */
   @Post('ideas/:id/vote')
-  async voteIdea(@Param('id') id: string) {
-    const success = await this.huizhiService.voteIdea(id);
+  async voteIdea(@Param('id') id: string, @Body() body: { author?: string }) {
+    const success = await this.huizhiService.voteIdea(id, body.author);
     return { success };
   }
 

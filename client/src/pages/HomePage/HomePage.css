@@ -884,5 +884,64 @@
       grid-template-columns: 1fr;
     }
   }
-  
+}
+
+/* 滚动弹幕区与 Toast 动效 */
+.danmaku-container {
+  height: 38px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  border: 1px dashed var(--border, #e2e8f0);
+  padding: 0 12px;
+}
+
+.danmaku-track {
+  display: flex;
+  gap: 32px;
+  animation: marquee-scroll 25s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.danmaku-item {
+  font-size: 0.82rem;
+  color: var(--muted, #64748b);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.danmaku-item strong {
+  color: var(--foreground, #1e293b);
+}
+
+.vote-btn {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+}
+
+.vote-btn.voted-scale {
+  transform: scale(1.22);
+  background-color: rgba(7, 96, 70, 0.12) !important;
+  color: #076046 !important;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes toast-in {
+  from {
+    transform: translate(-50%, 24px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
 }

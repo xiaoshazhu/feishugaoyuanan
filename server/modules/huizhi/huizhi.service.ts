@@ -199,6 +199,24 @@ export class HuizhiService {
             return `${uName}: ${content}`;
           });
 
+        const interactions = relatedInteractions.map((x) => {
+          const u = x.fields['用户']?.[0] || {};
+          let uName = u.name || '匿名';
+          const op = String(x.fields['操作'] || '');
+          const content = String(x.fields['评论内容'] || '').trim();
+
+          const match = content.match(/^\[([^\]]+)\]\s*(.*)$/);
+          if (match) {
+            uName = match[1];
+          }
+
+          return {
+            user: uName,
+            type: op,
+            content: match ? match[2] : content
+          };
+        });
+
         return {
           id: recordId,
           author: authorName,
@@ -211,6 +229,7 @@ export class HuizhiService {
           adoptedPoints: Number(fields['点子评分']) || 0,
           fullPlan: fields['点子采纳'] === '采纳',
           comments: comments,
+          interactions: interactions,
           createdAt: String(fields['createdAt'] || new Date().toISOString()),
         };
       });
@@ -312,7 +331,7 @@ export class HuizhiService {
   /**
    * 功能描述：点赞（写入互动中心）
    */
-  async voteIdea(id: string): Promise<boolean> {
+  async voteIdea(id: string, author?: string): Promise<boolean> {
     if (!this.isFeishuConfigured()) {
       const idx = this.memoryIdeas.findIndex((x) => x.id === id);
       if (idx !== -1) {
@@ -323,13 +342,15 @@ export class HuizhiService {
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
+    const voterName = author || '匿名';
     try {
       const rulesRecords = await this.feishuService.getRecords(appToken, TABLES.rules);
       const voteRule = rulesRecords.find((x) => x.fields['积分规则'] === '点赞');
       const scoreDiff = voteRule ? Number(voteRule.fields['分数变动']) : 0.2;
 
       // 为避免 UserFieldConvFail，优先查找存在的用户
-      const matchedUser = await this.findFeishuUserByName('王迅');
+      const matchedUser = await this.findFeishuUserByName(voterName);
+      const matchedDefault = await this.findFeishuUserByName('王迅');
 
       const fields: any = {
         '关联点子': [id],
@@ -337,8 +358,14 @@ export class HuizhiService {
         '积分变动': scoreDiff
       };
 
-      if (matchedUser) {
-        fields['用户'] = [{ id: matchedUser.id }];
+      // 外部点赞人以 [姓名] 点赞了此点子 的格式保存在评论内容字段，以便后续智能解析还原
+      if (!matchedUser) {
+        fields['评论内容'] = `[${voterName}] 点赞了此点子`;
+      }
+
+      const userToBind = matchedUser || matchedDefault;
+      if (userToBind) {
+        fields['用户'] = [{ id: userToBind.id }];
       }
 
       const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);
