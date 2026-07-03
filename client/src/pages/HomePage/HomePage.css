@@ -1,26 +1,23 @@
 .gaoyuanan-app {
-  --ink: #14211f;
-  --muted: #61706c;
-  --line: #dce5e0;
-  --paper: #f7faf7;
-  --panel: #ffffff;
-  --teal: #12695f;
-  --teal-dark: #0a443f;
-  --gold: #d49a32;
-  --red: #b94335;
-  --mint: #dff1e8;
-  --shadow: 0 18px 48px rgba(15, 42, 38, 0.14);
-
-  min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
-  text-align: left;
+  & {
+    --ink: #14211f;
+    --muted: #61706c;
+    --line: #dce5e0;
+    --paper: #f7faf7;
+    --panel: #ffffff;
+    --teal: #12695f;
+    --teal-dark: #0a443f;
+    --gold: #d49a32;
+    --red: #b94335;
+    --mint: #dff1e8;
+    --shadow: 0 18px 48px rgba(15, 42, 38, 0.14);
+  }
+  
   * {
     box-sizing: border-box;
   }
   
-  /* body */ .gaoyuanan-app-body {
+  & {
     margin: 0;
     background: var(--paper);
     color: var(--ink);
@@ -788,112 +785,104 @@
     font-size: 13px;
   }
   
-}
-
-@media (max-width: 920px) {
-  .gaoyuanan-app {
-      .nav-actions {
-        justify-content: flex-start;
-        max-width: 100%;
-      }
-    
-      .mission-band,
-      .feishu-band,
-      .form-layout,
-      .info-layout,
-      .ai-plan-layout,
-      .publish-layout,
-      .admin-grid,
-      .entry-hero,
-      .entry-config {
-        grid-template-columns: 1fr;
-      }
-    
-      .idea-grid,
-      .roadmap,
-      .theme-grid,
-      .sponsor-grid,
-      .publish-grid,
-      .entry-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    
-      .section-head {
-        align-items: stretch;
-        flex-direction: column;
-      }
+  @media (max-width: 920px) {
+    .nav-actions {
+      justify-content: flex-start;
+      max-width: 100%;
+    }
+  
+    .mission-band,
+    .feishu-band,
+    .form-layout,
+    .info-layout,
+    .ai-plan-layout,
+    .publish-layout,
+    .admin-grid,
+    .entry-hero,
+    .entry-config {
+      grid-template-columns: 1fr;
+    }
+  
+    .idea-grid,
+    .roadmap,
+    .theme-grid,
+    .sponsor-grid,
+    .publish-grid,
+    .entry-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  
+    .section-head {
+      align-items: stretch;
+      flex-direction: column;
     }
   }
-}
-
-@media (max-width: 640px) {
-  .gaoyuanan-app {
-    @media (max-width: 640px) {
-      .hero {
-        min-height: 640px;
-      }
-    
-      .topbar {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-    
-      .hero-copy {
-        margin-top: 42px;
-      }
-    
-      main {
-        width: min(100% - 22px, 1180px);
-      }
-    
-      .idea-grid,
-      .roadmap,
-      .theme-grid,
-      .sponsor-grid,
-      .publish-grid,
-      .entry-grid,
-      .field-row {
-        grid-template-columns: 1fr;
-      }
-    
-      .info-stats {
-        grid-template-columns: 1fr;
-      }
-    
-      .weight-row {
-        grid-template-columns: 1fr;
-      }
-    
-      .entry-shell {
-        width: min(100% - 22px, 1120px);
-        padding-top: 18px;
-      }
-    
-      .entry-hero {
-        min-height: auto;
-        gap: 24px;
-      }
-    
-      .phone-preview {
-        min-height: 420px;
-      }
-    
-      .filters {
-        flex-direction: column;
-      }
-    
-      .leader-row {
-        grid-template-columns: 46px 1fr;
-      }
-    
-      .leader-score {
-        grid-column: 2;
-      }
-    
-      .admin-item {
-        grid-template-columns: 1fr;
-      }
+  
+  @media (max-width: 640px) {
+    .hero {
+      min-height: 640px;
     }
-    
+  
+    .topbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  
+    .hero-copy {
+      margin-top: 42px;
+    }
+  
+    main {
+      width: min(100% - 22px, 1180px);
+    }
+  
+    .idea-grid,
+    .roadmap,
+    .theme-grid,
+    .sponsor-grid,
+    .publish-grid,
+    .entry-grid,
+    .field-row {
+      grid-template-columns: 1fr;
+    }
+  
+    .info-stats {
+      grid-template-columns: 1fr;
+    }
+  
+    .weight-row {
+      grid-template-columns: 1fr;
+    }
+  
+    .entry-shell {
+      width: min(100% - 22px, 1120px);
+      padding-top: 18px;
+    }
+  
+    .entry-hero {
+      min-height: auto;
+      gap: 24px;
+    }
+  
+    .phone-preview {
+      min-height: 420px;
+    }
+  
+    .filters {
+      flex-direction: column;
+    }
+  
+    .leader-row {
+      grid-template-columns: 46px 1fr;
+    }
+  
+    .leader-score {
+      grid-column: 2;
+    }
+  
+    .admin-item {
+      grid-template-columns: 1fr;
+    }
   }
+  
 }
