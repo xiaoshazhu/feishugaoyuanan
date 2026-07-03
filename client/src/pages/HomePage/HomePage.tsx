@@ -734,11 +734,11 @@ ${dinner}
                     </div>
                     <h3>{idea.title}</h3>
                     <p className="idea-content">{idea.content}</p>
-                    <div className="author">{idea.author} · {idea.role}</div>
-                    <div className="adoption">
-                      采纳点 <strong>{idea.adoptedPoints}</strong> · 当前积分 <strong>{scoreIdea(idea).toFixed(1)}</strong>
-                      {idea.fullPlan ? " · 完整策划" : ""}
-                    </div>
+                    {idea.fullPlan && (
+                      <div className="adoption">
+                        完整策划
+                      </div>
+                    )}
                     <div className="card-actions">
                       <button className="vote-btn" type="button" onClick={() => handleVote(idea.id)}>
                         点赞 {idea.votes}

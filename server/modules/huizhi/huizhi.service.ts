@@ -173,7 +173,15 @@ export class HuizhiService {
 
         // 筛选和统计此点子相关的互动
         const relatedInteractions = interactionRecords.filter((inter) => {
-          const linkedIds = inter.fields['关联点子']?.[0]?.record_ids || [];
+          const rawLink = inter.fields['关联点子'];
+          let linkedIds: string[] = [];
+          if (Array.isArray(rawLink)) {
+            if (rawLink.length > 0 && typeof rawLink[0] === 'object' && (rawLink[0] as any).record_ids) {
+              linkedIds = (rawLink[0] as any).record_ids;
+            } else {
+              linkedIds = rawLink.map(x => typeof x === 'string' ? x : (x?.id || ''));
+            }
+          }
           return linkedIds.includes(recordId);
         });
 
@@ -183,7 +191,12 @@ export class HuizhiService {
           .map((x) => {
             const u = x.fields['用户']?.[0] || {};
             const uName = u.name || '匿名';
-            return `${uName}: ${String(x.fields['评论内容']).trim()}`;
+            const content = String(x.fields['评论内容']).trim();
+            const match = content.match(/^\[([^\]]+)\]\s*(.*)$/);
+            if (match) {
+              return `${match[1]}: ${match[2]}`;
+            }
+            return `${uName}: ${content}`;
           });
 
         return {
@@ -319,12 +332,7 @@ export class HuizhiService {
       const matchedUser = await this.findFeishuUserByName('王迅');
 
       const fields: any = {
-        '关联点子': [
-          {
-            record_ids: [id],
-            table_id: TABLES.ideas,
-          }
-        ],
+        '关联点子': [id],
         '操作': '点赞',
         '积分变动': scoreDiff
       };
@@ -368,12 +376,7 @@ export class HuizhiService {
       const finalCommentContent = matchedUser ? commentText.trim() : `[${commentAuthor}] ${commentText.trim()}`;
 
       const fields: any = {
-        '关联点子': [
-          {
-            record_ids: [id],
-            table_id: TABLES.ideas,
-          }
-        ],
+        '关联点子': [id],
         '操作': '评论',
         '评论内容': finalCommentContent,
         '积分变动': 0
