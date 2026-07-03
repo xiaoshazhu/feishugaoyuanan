@@ -1236,18 +1236,22 @@ ${dinner}
                             position: 'relative'
                           }}
                         >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>🎁</span>
-                              {award.奖品名称}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+                              <span style={{ flexShrink: 0 }}>🎁</span>
+                              <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={award.奖品名称}>
+                                {award.奖品名称}
+                              </span>
                             </div>
                             <span style={{ 
-                              fontSize: '0.82rem', 
+                              fontSize: '0.8rem', 
                               fontWeight: 'bold', 
                               color: '#ef4444', 
                               background: '#fee2e2', 
                               padding: '2px 8px', 
-                              borderRadius: '12px' 
+                              borderRadius: '12px',
+                              flexShrink: 0,
+                              whiteSpace: 'nowrap'
                             }}>
                               {award.所需积分} 积分
                             </span>
