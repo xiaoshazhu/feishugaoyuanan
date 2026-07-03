@@ -190,6 +190,65 @@ export default function HomePage() {
   // 新增：全局 Toast 与点赞动画状态
   const [toast, setToast] = useState<{ message: string; visible: boolean; type?: 'success' | 'info' }>({ message: '', visible: false });
   const [votedIds, setVotedIds] = useState<string[]>([]);
+
+  // 新增：共创人员登录/实名登记状态
+  const [userInfo, setUserInfo] = useState<{ name: string; department: string } | null>(() => {
+    try {
+      const cached = localStorage.getItem("gaoyuanan_user_info");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [regName, setRegName] = useState("");
+  const [regDept, setRegDept] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [regError, setRegError] = useState("");
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = regName.trim();
+    const dept = regDept.trim();
+    if (!name || !dept) {
+      setRegError("请填写完整的姓名与所属单位");
+      return;
+    }
+    
+    setIsRegistering(true);
+    setRegError("");
+    try {
+      const res = await axiosForBackend({
+        url: "/api/huizhi/members",
+        method: "POST",
+        data: { name, department: dept }
+      });
+      
+      if (res.data?.success) {
+        const info = { name, department: dept };
+        localStorage.setItem("gaoyuanan_user_info", JSON.stringify(info));
+        setUserInfo(info);
+        showToast(`登记成功！欢迎您，${name}。`);
+      } else {
+        setRegError("登记失败，请稍后重试");
+      }
+    } catch (err) {
+      console.error(err);
+      setRegError("网络异常，登记未成功");
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  // 当登记共创人成功后，自动给 newIdea 表单赋值
+  useEffect(() => {
+    if (userInfo) {
+      setNewIdea((prev) => ({
+        ...prev,
+        author: userInfo.name,
+        role: userInfo.department
+      }));
+    }
+  }, [userInfo]);
   
   const showToast = useCallback((message: string, type: 'success' | 'info' = 'success') => {
     setToast({ message, visible: true, type });
@@ -426,7 +485,7 @@ ${dinner}
 
   // Actions
   const handleVote = (id: string) => {
-    const authorName = newIdea.author.trim() || "王迅";
+    const authorName = userInfo?.name || "匿名";
     // Q弹反馈缩放动画触发
     setVotedIds((prev) => [...prev, id]);
     setTimeout(() => {
@@ -452,7 +511,7 @@ ${dinner}
 
   const handleAddComment = (id: string, text: string) => {
     if (!text.trim()) return;
-    const authorName = newIdea.author.trim() || "王迅";
+    const authorName = userInfo?.name || "匿名";
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/comment`,
       method: "POST",
@@ -770,22 +829,47 @@ ${dinner}
                         完整策划
                       </div>
                     )}
-                    {/* 滚动弹幕区 */}
-                    <div className="danmaku-container">
+                    {/* 滚动弹幕区 - 3行不规则滑行弹幕 */}
+                    <div className="danmaku-container-v2" style={{ height: '86px', position: 'relative', overflow: 'hidden', background: 'rgba(0, 0, 0, 0.015)', borderRadius: '8px', marginTop: '14px', border: '1px dashed var(--border)', padding: '4px' }}>
                       {idea.interactions && idea.interactions.length > 0 ? (
-                        <div className="danmaku-track">
-                          {[...idea.interactions, ...idea.interactions].map((inter: any, itemIdx: number) => (
-                            <span key={itemIdx} className="danmaku-item">
+                        idea.interactions.map((inter: any, itemIdx: number) => {
+                          const rowIndex = itemIdx % 3; // 0, 1, 2 通道
+                          const topPosition = `${4 + rowIndex * 26}px`; // 每行高度 26px
+                          const speed = 7 + (itemIdx % 4) * 2; // 错开速度：7s, 9s, 11s, 13s
+                          const delay = (itemIdx * 1.6) % 5;   // 错开延迟：0s, 1.6s, 3.2s, 4.8s...
+                          
+                          return (
+                            <span
+                              key={itemIdx}
+                              className="danmaku-item-v2"
+                              style={{
+                                position: 'absolute',
+                                top: topPosition,
+                                animation: `danmaku-slide ${speed}s linear infinite`,
+                                animationDelay: `${delay}s`,
+                                whiteSpace: 'nowrap',
+                                fontSize: '0.78rem',
+                                background: 'var(--accent)',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border)',
+                                color: 'var(--muted)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                              }}
+                            >
                               {inter.type === '点赞' ? (
                                 <>❤️ <strong>{inter.user}</strong> 点赞了此想法</>
                               ) : (
                                 <>💬 <strong>{inter.user}</strong>：<span>{inter.content}</span></>
                               )}
                             </span>
-                          ))}
-                        </div>
+                          );
+                        })
                       ) : (
-                        <span style={{ fontSize: '0.82rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px', height: '100%', paddingLeft: '8px' }}>
                           💡 暂无动态，点击下方按钮参与第一条互动！
                         </span>
                       )}
@@ -847,27 +931,12 @@ ${dinner}
             <div className="form-layout">
               <form id="ideaForm" className="panel" onSubmit={handleIdeaSubmit}>
                 <h2>投放你的想法</h2>
-                <div className="field-row">
-                  <label>
-                    姓名
-                    <input
-                      id="author"
-                      required
-                      placeholder="例如：张倩"
-                      value={newIdea.author}
-                      onChange={(e) => setNewIdea((prev) => ({ ...prev, author: e.target.value }))}
-                    />
-                  </label>
-                  <label>
-                    部门/角色
-                    <input
-                      id="role"
-                      required
-                      placeholder="例如：市场组 / 销售负责人"
-                      value={newIdea.role}
-                      onChange={(e) => setNewIdea((prev) => ({ ...prev, role: e.target.value }))}
-                    />
-                  </label>
+                <div className="field-row" style={{ display: 'none' }}>
+                  <input id="author" value={newIdea.author} readOnly />
+                  <input id="role" value={newIdea.role} readOnly />
+                </div>
+                <div style={{ marginBottom: '18px', fontSize: '0.9rem', color: 'var(--muted)', background: 'var(--accent)', padding: '12px 16px', borderRadius: '6px', border: '1px solid var(--border)', lineHeight: '1.5' }}>
+                  💡 您当前正以共创人：<strong>{userInfo?.name}</strong>（所属部门/单位：<strong>{userInfo?.department}</strong>）的身份提交想法。如需修改，请清理浏览器缓存后刷新登记。
                 </div>
                 <label>
                   建议标题
@@ -1132,6 +1201,134 @@ ${dinner}
           }}
         >
           {toast.type === 'success' ? '✨' : 'ℹ️'} {toast.message}
+        </div>
+      )}
+
+      {/* 磨砂玻璃质感共创人身份登记遮罩 Modal */}
+      {!userInfo && (
+        <div
+          className="registration-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(7, 96, 70, 0.45)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <form
+            onSubmit={handleRegisterSubmit}
+            className="panel registration-card"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              padding: '40px 32px',
+              borderRadius: '16px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+              background: 'var(--background)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  background: 'rgba(7, 96, 70, 0.1)',
+                  color: '#076046',
+                  padding: '6px 16px',
+                  borderRadius: '20px',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  marginBottom: '12px'
+                }}
+              >
+                高效协同 · 汇智共创
+              </span>
+              <h2 style={{ fontSize: '1.6rem', margin: 0, color: 'var(--foreground)', fontWeight: 'bold' }}>共创人身份登记</h2>
+              <p style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: '8px', lineHeight: '1.6' }}>
+                请登记您的真实姓名与所属单位，开始您的 AI 效率想法共创之旅。
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--foreground)' }}>
+                人员名称 (真实姓名)
+                <input
+                  type="text"
+                  required
+                  placeholder="请输入您的真实姓名"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--background)',
+                    color: 'var(--foreground)',
+                    fontSize: '0.95rem',
+                    transition: 'border-color 0.2s',
+                  }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--foreground)' }}>
+                所属单位 (部门/公司)
+                <input
+                  type="text"
+                  required
+                  placeholder="例如：技术部 / 海科科技"
+                  value={regDept}
+                  onChange={(e) => setRegDept(e.target.value)}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--background)',
+                    color: 'var(--foreground)',
+                    fontSize: '0.95rem',
+                    transition: 'border-color 0.2s',
+                  }}
+                />
+              </label>
+            </div>
+
+            {regError && (
+              <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 'bold', textAlign: 'center' }}>
+                ⚠️ {regError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isRegistering}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: '#076046',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                cursor: isRegistering ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(7, 96, 70, 0.2)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {isRegistering ? '正在登记注册...' : '开启共创箱'}
+            </button>
+          </form>
         </div>
       )}
     </div>

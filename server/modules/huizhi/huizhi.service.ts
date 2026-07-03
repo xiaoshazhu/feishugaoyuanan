@@ -447,12 +447,24 @@ export class HuizhiService {
         
         // 姓名列在多维表格中是 人员 类型，列名为 '人员名称'
         const userObj = fields['人员名称']?.[0] || {};
-        const authorName = userObj.name || userObj.en_name || '匿名';
+        let authorName = userObj.name || userObj.en_name || '';
+        let role = String(fields['所属单位'] || fields['部门'] || '');
+
+        // 智能解码外部用户名，格式为 "所属单位 (真实姓名)"
+        const match = role.match(/^(.*?)\s*\(([^)]+)\)$/);
+        if (match) {
+          role = match[1].trim();
+          authorName = match[2].trim();
+        }
+
+        if (!authorName) {
+          authorName = '匿名';
+        }
         
         return {
           id: record.record_id,
           author: authorName,
-          role: String(fields['部门'] || ''),
+          role: role,
           avatarUrl: userObj.avatar_url || '',
           score: Number(fields['总积分']) || 0,
           ideas: Number(fields['发帖个数']) || 0,
@@ -503,6 +515,66 @@ export class HuizhiService {
       return !!result;
     } catch (error) {
       this.logger.error('更新发起人想法配置失败', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * 功能描述：注册/登记共创人员信息到人员表中
+   */
+  async registerMember(data: { name: string; department: string }): Promise<boolean> {
+    if (!this.isFeishuConfigured()) {
+      return true;
+    }
+    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
+    const name = String(data.name || '').trim();
+    const department = String(data.department || '').trim();
+    if (!name || !department) return false;
+
+    try {
+      this.logger.log(`正在请求飞书检索/登记共创人员: name=${name}, dept=${department}`);
+      // 1. 获取已有的人员列表，以进行防重复校验
+      const records = await this.feishuService.getRecords(appToken, TABLES.members);
+      
+      const exists = records.some((record) => {
+        const fields = record.fields;
+        const userObj = fields['人员名称']?.[0] || {};
+        const authorName = userObj.name || userObj.en_name || '';
+        const role = String(fields['所属单位'] || fields['部门'] || '');
+        
+        let matchedAuthor = authorName;
+        let matchedRole = role;
+        const match = role.match(/^(.*?)\s*\(([^)]+)\)$/);
+        if (match) {
+          matchedRole = match[1].trim();
+          matchedAuthor = match[2].trim();
+        }
+        
+        return matchedAuthor === name && matchedRole === department;
+      });
+
+      if (exists) {
+        this.logger.log(`人员已存在，跳过写入: name=${name}, dept=${department}`);
+        return true;
+      }
+
+      // 2. 尝试查找在飞书系统中的对应用户 ID
+      const matchedUser = await this.findFeishuUserByName(name);
+      
+      const fields: any = {};
+
+      if (matchedUser) {
+        fields['人员名称'] = [{ id: matchedUser.id }];
+        fields['所属单位'] = department;
+      } else {
+        // 如果是外部人员，采用“所属单位 (真实姓名)”的智能格式存储到“所属单位”文本列中以规避 UserField 限制
+        fields['所属单位'] = `${department} (${name})`;
+      }
+
+      const result = await this.feishuService.createRecord(appToken, TABLES.members, fields);
+      return !!result;
+    } catch (error) {
+      this.logger.error('注册人员失败', error.message);
       return false;
     }
   }

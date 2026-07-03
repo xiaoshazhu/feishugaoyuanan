@@ -103,4 +103,13 @@ export class HuizhiController {
     const success = await this.huizhiService.updateInfoConfig(body);
     return { success };
   }
+
+  /**
+   * 功能描述：进入系统后实名登记共创人员信息
+   */
+  @Post('members')
+  async registerMember(@Body() body: { name: string; department: string }) {
+    const success = await this.huizhiService.registerMember(body);
+    return { success };
+  }
 }
