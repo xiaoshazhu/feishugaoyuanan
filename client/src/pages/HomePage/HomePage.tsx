@@ -486,32 +486,77 @@ ${dinner}
   // Actions
   const handleVote = (id: string) => {
     const authorName = userInfo?.name || "匿名";
-    // Q弹反馈缩放动画触发
+    // 1. 触发 Q弹动效
     setVotedIds((prev) => [...prev, id]);
     setTimeout(() => {
       setVotedIds((prev) => prev.filter(x => x !== id));
     }, 1000);
 
+    // 2. 乐观更新本地状态 (点赞数立即+1，并在卡片弹幕列表追加一条点赞交互)
+    setState((prev) => {
+      const newIdeas = prev.ideas.map((idea) => {
+        if (idea.id === id) {
+          const newInteractions = [
+            ...(idea.interactions || []),
+            { user: authorName, type: "点赞", content: "" }
+          ];
+          return {
+            ...idea,
+            votes: idea.votes + 1,
+            interactions: newInteractions
+          };
+        }
+        return idea;
+      });
+      return { ...prev, ideas: newIdeas };
+    });
+
+    showToast("点赞成功！感谢您的共创。");
+
+    // 3. 静默网络请求与刷新
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/vote`,
       method: "POST",
       data: { author: authorName }
     }).then((res) => {
       if (res.data?.success) {
-        showToast("点赞成功！感谢您的共创。");
         refreshAllData();
-      } else {
-        showToast("点赞失败，请稍后重试", "info");
       }
     }).catch((err) => {
       console.error("Failed to vote for idea:", err);
-      showToast("操作出错，请检查网络", "info");
     });
   };
 
   const handleAddComment = (id: string, text: string) => {
     if (!text.trim()) return;
     const authorName = userInfo?.name || "匿名";
+
+    // 1. 乐观更新本地状态 (将评论立刻插入弹幕流和本地 comments)
+    setState((prev) => {
+      const newIdeas = prev.ideas.map((idea) => {
+        if (idea.id === id) {
+          const newInteractions = [
+            ...(idea.interactions || []),
+            { user: authorName, type: "评论", content: text.trim() }
+          ];
+          const newComments = [
+            ...(idea.comments || []),
+            `${authorName}: ${text.trim()}`
+          ];
+          return {
+            ...idea,
+            comments: newComments,
+            interactions: newInteractions
+          };
+        }
+        return idea;
+      });
+      return { ...prev, ideas: newIdeas };
+    });
+
+    showToast("发表评论成功！已同步至互动中心。");
+
+    // 2. 静默网络请求
     axiosForBackend({
       url: `/api/huizhi/ideas/${id}/comment`,
       method: "POST",
@@ -880,7 +925,7 @@ ${dinner}
                         点赞 {idea.votes}
                       </button>
                       <button className="comment-toggle" type="button" onClick={() => toggleCommentSection(idea.id)}>
-                        评论 {idea.votes + (idea.comments ? idea.comments.length : 0) > 0 ? '互动' : '建议'}
+                        参与互动
                       </button>
                     </div>
                     {isCommentsOpen && (

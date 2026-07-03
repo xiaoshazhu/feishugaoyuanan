@@ -240,6 +240,46 @@ export class HuizhiService {
   }
 
   /**
+   * 辅助方法：直接通过飞书通讯录 API 根据姓名模糊/精确检索用户 ID
+   */
+  private async searchFeishuUserFromPlatform(name: string): Promise<any> {
+    try {
+      const token = await this.feishuService.getTenantAccessToken();
+      const url = 'https://open.feishu.cn/open-apis/contact/v3/users/search';
+      
+      this.logger.log(`正在请求飞书开放平台检索实名用户: name=${name}`);
+      const response = await axios.post(
+        url,
+        { query: name },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+        }
+      );
+
+      if (response.data?.code === 0) {
+        const items = response.data.data?.items || [];
+        const matched = items.find((x: any) => x.name === name);
+        if (matched) {
+          this.logger.log(`成功从飞书平台检索到用户ID: name=${name}, open_id=${matched.open_id}`);
+          return {
+            id: matched.open_id,
+            name: matched.name,
+            avatar_url: matched.avatar?.avatar_origin || matched.avatar?.avatar_72 || '',
+          };
+        }
+      } else {
+        this.logger.warn(`飞书平台用户检索接口返回失败: ${response.data?.msg || '未知'} (码: ${response.data?.code})`);
+      }
+    } catch (error) {
+      this.logger.error(`飞书平台检索用户异常: ${error.message}`);
+    }
+    return null;
+  }
+
+  /**
    * 辅助方法：从飞书多维表格成员表查找同名用户
    */
   private async findFeishuUserByName(authorName: string): Promise<any> {
@@ -261,9 +301,11 @@ export class HuizhiService {
         }
       }
     } catch (e) {
-      this.logger.warn(`查找飞书用户失败: ${e.message}`);
+      this.logger.warn(`从成员表已有历史查找失败: ${e.message}`);
     }
-    return null;
+
+    // 2. 如果多维表格历史中没有，调用飞书通讯录 API 搜索
+    return await this.searchFeishuUserFromPlatform(authorName);
   }
 
   /**
