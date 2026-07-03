@@ -701,11 +701,39 @@ ${dinner}
         <div className="hero-shade"></div>
         <nav className="topbar" aria-label="主导航">
           <strong>高原安A效率先锋汇智箱</strong>
-          <div className="nav-actions">
+          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <a className="ghost small nav-link" href="/feishu-entry">飞书入口</a>
             <button className="ghost small" onClick={() => changeView("info")}>活动信息</button>
             <button className="ghost small" onClick={() => changeView("ideas")}>点子广场</button>
             <button className="ghost small" onClick={() => changeView("submit")}>投放想法</button>
+            {userInfo && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255, 255, 255, 0.15)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', color: '#fff' }}>
+                👤 <span>{userInfo.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem("gaoyuanan_user_info");
+                    setUserInfo(null);
+                    setRegName("");
+                    setRegDept("");
+                    setNewIdea((prev) => ({ ...prev, author: "", role: "" }));
+                  }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.25)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '2px 8px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    marginLeft: '4px'
+                  }}
+                >
+                  重登
+                </button>
+              </div>
+            )}
           </div>
         </nav>
         <section className="hero-copy">

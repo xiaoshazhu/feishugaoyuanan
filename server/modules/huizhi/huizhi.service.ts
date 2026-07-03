@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import axios from 'axios';
 import { FeishuService } from '../feishu/feishu.service';
 
 export interface Idea {
@@ -189,31 +190,20 @@ export class HuizhiService {
         const comments = relatedInteractions
           .filter((x) => x.fields['操作'] === '评论' && x.fields['评论内容'])
           .map((x) => {
-            const u = x.fields['用户']?.[0] || {};
-            const uName = u.name || '匿名';
+            const uName = String(x.fields['用户'] || '匿名');
             const content = String(x.fields['评论内容']).trim();
-            const match = content.match(/^\[([^\]]+)\]\s*(.*)$/);
-            if (match) {
-              return `${match[1]}: ${match[2]}`;
-            }
             return `${uName}: ${content}`;
           });
 
         const interactions = relatedInteractions.map((x) => {
-          const u = x.fields['用户']?.[0] || {};
-          let uName = u.name || '匿名';
+          const uName = String(x.fields['用户'] || '匿名');
           const op = String(x.fields['操作'] || '');
           const content = String(x.fields['评论内容'] || '').trim();
-
-          const match = content.match(/^\[([^\]]+)\]\s*(.*)$/);
-          if (match) {
-            uName = match[1];
-          }
 
           return {
             user: uName,
             type: op,
-            content: match ? match[2] : content
+            content: content
           };
         });
 
@@ -400,15 +390,7 @@ export class HuizhiService {
         '积分变动': scoreDiff
       };
 
-      // 外部点赞人以 [姓名] 点赞了此点子 的格式保存在评论内容字段，以便后续智能解析还原
-      if (!matchedUser) {
-        fields['评论内容'] = `[${voterName}] 点赞了此点子`;
-      }
-
-      const userToBind = matchedUser || matchedDefault;
-      if (userToBind) {
-        fields['用户'] = [{ id: userToBind.id }];
-      }
+      fields['用户'] = voterName;
 
       const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);
       return !!result;
@@ -437,25 +419,13 @@ export class HuizhiService {
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
     const commentAuthor = author || '匿名';
     try {
-      // 匹配评论作者
-      const matchedUser = await this.findFeishuUserByName(commentAuthor);
-      const matchedDefault = await this.findFeishuUserByName('王迅');
-      
-      // 如果是非飞书合法用户，我们将名字格式写入评论内容，防止名字丢失且防止 API 写入失败
-      const finalCommentContent = matchedUser ? commentText.trim() : `[${commentAuthor}] ${commentText.trim()}`;
-
       const fields: any = {
         '关联点子': [id],
         '操作': '评论',
-        '评论内容': finalCommentContent,
-        '积分变动': 0
+        '评论内容': commentText.trim(),
+        '积分变动': 0,
+        '用户': commentAuthor
       };
-
-      // 绑定匹配到的用户 ID，如无则绑定默认用户的 ID，以成功创建记录
-      const userToBind = matchedUser || matchedDefault;
-      if (userToBind) {
-        fields['用户'] = [{ id: userToBind.id }];
-      }
 
       const result = await this.feishuService.createRecord(appToken, TABLES.interactions, fields);
       if (result) {

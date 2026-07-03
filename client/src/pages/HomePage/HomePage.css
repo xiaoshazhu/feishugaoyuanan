@@ -892,17 +892,16 @@
 }
 
 .danmaku-item-v2 {
-  will-change: left;
+  left: 100%;
+  will-change: transform;
 }
 
 @keyframes danmaku-slide {
   0% {
-    left: 100%;
     transform: translateX(0);
   }
   100% {
-    left: 0;
-    transform: translateX(-100%);
+    transform: translateX(-560px);
   }
 }
 
