@@ -1,77 +1,1088 @@
-import { CheckCircle2, ClipboardList, Lightbulb, Trophy, UsersRound } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import './HomePage.css';
 
-const HomePage = () => {
-  const modules = [
-    { icon: Lightbulb, title: '点子广场', text: '后续承接投稿、评论、点赞和分类筛选。' },
-    { icon: ClipboardList, title: '智能策划', text: '按发起人目标、活动信息和全部投稿生成方案草案。' },
-    { icon: Trophy, title: '积分榜', text: '沉淀提交、点赞、采纳点和完整策划的激励规则。' },
-    { icon: UsersRound, title: '组委会后台', text: '后续放置采纳评分、发布入口和飞书数据同步。' },
-  ];
+const STORAGE_KEY = "gaoyuan-ai-huizhi-box-v1";
+const validViews = ["ideas", "info", "intent", "submit", "ai-plan", "publish", "leaderboard", "roadmap", "admin"];
 
-  return (
-    <main className="min-h-screen bg-[#f7faf7] text-[#14211f]">
-      <section className="bg-[#0a443f] text-white">
-        <div className="mx-auto flex min-h-[420px] w-[min(1120px,calc(100%-32px))] flex-col justify-center gap-8 py-14">
-          <div className="max-w-3xl space-y-5">
-            <p className="text-sm font-semibold tracking-[0.18em] text-[#cfe3d9]">
-              飞书妙搭模板化改造版
-            </p>
-            <h1 className="text-4xl font-bold leading-tight md:text-6xl">
-              高原安A效率先锋汇智箱
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-[#e5f2ee]">
-              当前已切换为与飞书妙搭项目一致的 React + Vite + Nest 模板结构。后续新增页面、接口、组件和数据能力，都应继续放在这个模板体系内。
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-white/20 bg-white/10 p-4">
-              <strong className="block text-2xl">2026.09.03</strong>
-              <span className="text-sm text-[#dbeae5]">成都活动日</span>
-            </div>
-            <div className="rounded-lg border border-white/20 bg-white/10 p-4">
-              <strong className="block text-2xl">约500人</strong>
-              <span className="text-sm text-[#dbeae5]">企业核心人员</span>
-            </div>
-            <div className="rounded-lg border border-white/20 bg-white/10 p-4">
-              <strong className="block text-2xl">妙搭结构</strong>
-              <span className="text-sm text-[#dbeae5]">等待业务迁移</span>
-            </div>
-          </div>
-        </div>
-      </section>
+const categories = [
+  "活动定位",
+  "活动基本信息",
+  "精品案例",
+  "互动体验",
+  "嘉宾邀请",
+  "宣传推广",
+  "客户转化",
+  "AIAA晚餐",
+  "合规边界",
+  "现场执行",
+  "智能策划"
+];
 
-      <section className="mx-auto w-[min(1120px,calc(100%-32px))] py-10">
-        <div className="mb-6 flex flex-col gap-2">
-          <h2 className="text-2xl font-bold">模板调整结果</h2>
-          <p className="text-[#61706c]">
-            原静态版本已保留在 legacy-static 中；当前首页仅作为妙搭模式的项目底座，后续会逐步把原业务功能迁入 React 页面和 Nest 接口。
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {modules.map(({ icon: Icon, title, text }) => (
-            <article key={title} className="rounded-lg border border-[#dce5e0] bg-white p-5 shadow-sm">
-              <div className="mb-4 inline-flex size-10 items-center justify-center rounded-lg bg-[#dff1e8] text-[#12695f]">
-                <Icon className="size-5" />
-              </div>
-              <h3 className="mb-2 text-lg font-bold">{title}</h3>
-              <p className="leading-7 text-[#61706c]">{text}</p>
-            </article>
-          ))}
-        </div>
-
-        <div className="mt-8 rounded-lg border border-[#cfe3d9] bg-[#eef7f3] p-5">
-          <div className="flex items-center gap-2 font-semibold text-[#0a443f]">
-            <CheckCircle2 className="size-5" />
-            <span>已对齐飞书妙搭项目结构</span>
-          </div>
-          <p className="mt-2 text-[#61706c]">
-            新代码请优先放入 client/src、server/modules 和 shared，避免再回到根目录 HTML、原生 JS、独立 Express 服务的旧模式。
-          </p>
-        </div>
-      </section>
-    </main>
-  );
+const defaultIntent = {
+  purpose: "高原安、字节跳动、海科科技共同发起，打造一场面向约500位企业核心人员的AI效率先锋活动，展示AI和飞书在企业管理中的实战价值，提升行业影响力并促进高质量商机转化。",
+  outcome: "让企业主看见真实案例、愿意交流、愿意留下需求；让飞书效率先锋决赛形成传播亮点；让AIAA晚餐承接30位企业主深度交流；最终沉淀一份可执行、可传播、可复盘的总策划。",
+  resources: "活动时间为2026年9月3日全天，地点成都，总人数约500人。上午9:00-12:00，12:00-13:30自助餐交流，下午13:30-17:30，间隙插入共90分钟热场活动和问题解答，18:00-20:00 AIAA晚餐，自愿AA报名，每人198元，约30人，主要针对企业主。现场若挂飞书名，不做直接商业售卖。",
+  keywords: "AI企业管理,飞书效率,实战分享,效率先锋决赛,企业主,商机转化,客户信息收集,互动热场,问题解答,AIAA晚餐,字节跳动高级分享,合规,成都,500人"
 };
 
-export default HomePage;
+function getDefaultEntryUrl() {
+  const entryUrl = new URL("/feishu-entry", window.location.origin);
+  entryUrl.hash = "";
+  return entryUrl.href;
+}
+
+const defaultPublish = {
+  publishUrl: "", // dynamically set below
+  dinnerUrl: "",
+  audienceType: "内部筹备成员"
+};
+
+const seedIdeas = [
+  {
+    id: "idea-001",
+    author: "市场组",
+    role: "活动统筹",
+    title: "用汇智箱提前征集客户最想看的AI场景",
+    category: "客户转化",
+    phase: "预热宣传期",
+    content: "邀请目标客户在报名页选择最关注的数字化场景，活动当天按热度安排案例顺序，会后销售按兴趣标签跟进。",
+    votes: 18,
+    adoptedPoints: 3,
+    fullPlan: false,
+    comments: ["可以和报名表字段打通。", "也适合给主持人口播引用。"],
+    createdAt: "2026-06-26T15:00:00.000Z"
+  },
+  {
+    id: "idea-002",
+    author: "技术组",
+    role: "案例负责人",
+    title: "案例展示统一用真实业务前后对比",
+    category: "精品案例",
+    phase: "方案定稿前",
+    content: "每个案例只讲三个画面：痛点、飞书/AI改造动作、效率结果。避免讲产品堆功能，让企业老板能一眼看到价值。",
+    votes: 25,
+    adoptedPoints: 4,
+    fullPlan: true,
+    comments: ["建议每个案例控制在8分钟。"],
+    createdAt: "2026-06-26T15:20:00.000Z"
+  },
+  {
+    id: "idea-003",
+    author: "销售组",
+    role: "商机推进",
+    title: "AIAA晚餐设置行业圆桌座位卡",
+    category: "AIAA晚餐",
+    phase: "会后转化期",
+    content: "晚餐不做硬销售，按行业和数字化痛点分桌，每桌放一张问题卡，由高原安同事引导客户互相交流。",
+    votes: 12,
+    adoptedPoints: 2,
+    fullPlan: false,
+    comments: [],
+    createdAt: "2026-06-26T16:00:00.000Z"
+  },
+  {
+    id: "idea-004",
+    author: "品牌组",
+    role: "宣发",
+    title: "小红书和抖音预热做效率挑战短视频",
+    category: "宣传推广",
+    phase: "预热宣传期",
+    content: "用30秒短视频展示一个AI工具让会议纪要、任务拆解、客户跟进提速，结尾引导报名线下分享大会。",
+    votes: 9,
+    adoptedPoints: 1,
+    fullPlan: false,
+    comments: ["注意不包装成独立产品。"],
+    createdAt: "2026-06-26T16:08:00.000Z"
+  }
+];
+
+interface Idea {
+  id: string;
+  author: string;
+  role: string;
+  title: string;
+  category: string;
+  phase: string;
+  content: string;
+  votes: number;
+  adoptedPoints: number;
+  fullPlan: boolean;
+  comments: string[];
+  createdAt: string;
+}
+
+interface Intent {
+  purpose: string;
+  outcome: string;
+  resources: string;
+  keywords: string;
+}
+
+interface Publish {
+  publishUrl: string;
+  dinnerUrl: string;
+  audienceType: string;
+}
+
+export default function HomePage() {
+  // Load initial state
+  const [state, setState] = useState<{
+    ideas: Idea[];
+    intent: Intent;
+    publish: Publish;
+  }>(() => {
+    const defaultPubWithUrl = { ...defaultPublish, publishUrl: getDefaultEntryUrl() };
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    if (!raw) {
+      return {
+        ideas: seedIdeas,
+        intent: defaultIntent,
+        publish: defaultPubWithUrl
+      };
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      return {
+        ideas: Array.isArray(parsed.ideas) ? parsed.ideas : seedIdeas,
+        intent: { ...defaultIntent, ...parsed.intent },
+        publish: { ...defaultPubWithUrl, ...parsed.publish }
+      };
+    } catch {
+      return {
+        ideas: seedIdeas,
+        intent: defaultIntent,
+        publish: defaultPubWithUrl
+      };
+    }
+  });
+
+  const [activeView, setActiveView] = useState("ideas");
+  const [categoryFilter, setCategoryFilter] = useState("全部");
+  const [sortMode, setSortMode] = useState("hot");
+
+  // Form states
+  const [newIdea, setNewIdea] = useState({
+    author: "",
+    role: "",
+    title: "",
+    category: categories[0],
+    phase: "方案定稿前",
+    content: ""
+  });
+  const [intentInput, setIntentInput] = useState<Intent>({ ...state.intent });
+  const [publishInput, setPublishInput] = useState<Publish>({ ...state.publish });
+  const [copyStatus, setCopyStatus] = useState("");
+  const [exportBoxValue, setExportBoxValue] = useState("");
+
+  // Save state on update
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
+
+  // Sync hash to activeView
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (validViews.includes(hash)) {
+        setActiveView(hash);
+      }
+    };
+    handleHashChange();
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const changeView = (view: string) => {
+    setActiveView(view);
+    window.history.replaceState(null, "", `#${view}`);
+  };
+
+  // Helper calculation functions
+  const scoreIdea = useCallback((idea: Idea) => {
+    return 1 + idea.votes * 0.2 + idea.adoptedPoints * 5 + (idea.fullPlan ? 20 : 0);
+  }, []);
+
+  const aggregatePeople = useCallback(() => {
+    const peopleMap = new Map<string, {
+      author: string;
+      role: string;
+      ideas: number;
+      votes: number;
+      adoptedPoints: number;
+      fullPlans: number;
+      score: number;
+    }>();
+
+    state.ideas.forEach((idea) => {
+      const key = idea.author.trim();
+      const current = peopleMap.get(key) || {
+        author: idea.author,
+        role: idea.role,
+        ideas: 0,
+        votes: 0,
+        adoptedPoints: 0,
+        fullPlans: 0,
+        score: 0
+      };
+      current.ideas += 1;
+      current.votes += idea.votes;
+      current.adoptedPoints += idea.adoptedPoints;
+      current.fullPlans += idea.fullPlan ? 1 : 0;
+      current.score += scoreIdea(idea);
+      peopleMap.set(key, current);
+    });
+
+    return [...peopleMap.values()].sort((a, b) => b.score - a.score);
+  }, [state.ideas, scoreIdea]);
+
+  const tokenizeIntent = useCallback(() => {
+    return state.intent.keywords
+      .split(/[,，、\s]+/)
+      .map((k) => k.trim())
+      .filter(Boolean);
+  }, [state.intent.keywords]);
+
+  const scoreIdeaForPlan = useCallback((idea: Idea) => {
+    const text = `${idea.title} ${idea.category} ${idea.phase} ${idea.content}`;
+    const keywords = tokenizeIntent();
+    const matched = keywords.filter((k) => text.includes(k));
+    
+    const intentAllText = `${state.intent.purpose} ${state.intent.outcome} ${state.intent.resources} ${state.intent.keywords}`;
+    if (intentAllText.includes(idea.category) && !matched.includes(idea.category)) {
+      matched.push(idea.category);
+    }
+    const themeBoost = ["精品案例", "互动体验", "客户转化", "AIAA晚餐", "合规边界", "智能策划"].includes(idea.category) ? 12 : 6;
+    const adoptionBoost = idea.adoptedPoints * 8 + (idea.fullPlan ? 18 : 0);
+    const crowdBoost = Math.min(18, idea.votes * 0.7 + idea.comments.length * 1.8);
+    const keywordScore = Math.min(38, matched.length * 7);
+    const feasibility = idea.phase === "活动当天" || idea.phase === "方案定稿前" ? 12 : 8;
+    const score = Math.min(100, Math.round(themeBoost + adoptionBoost + crowdBoost + keywordScore + feasibility));
+    return {
+      ...idea,
+      aiScore: score,
+      matchedKeywords: matched,
+      planWeight: 0
+    };
+  }, [state.intent, tokenizeIntent]);
+
+  const generatePlan = useCallback(() => {
+    const ranked = state.ideas.map(scoreIdeaForPlan).sort((a, b) => b.aiScore - a.aiScore);
+    const selected = ranked.slice(0, Math.min(6, ranked.length));
+    const scoreTotal = selected.reduce((sum, idea) => sum + idea.aiScore, 0) || 1;
+    selected.forEach((idea) => {
+      idea.planWeight = Math.round((idea.aiScore / scoreTotal) * 100);
+    });
+    const themes = [...new Set(selected.map((idea) => idea.category))].slice(0, 5);
+    return {
+      title: "高原安AI效率先锋分享大会全天总策划草案",
+      ranked,
+      selected,
+      themes,
+      keywords: tokenizeIntent().slice(0, 14)
+    };
+  }, [state.ideas, scoreIdeaForPlan, tokenizeIntent]);
+
+  const buildPublishMessage = useCallback((publishState: Publish) => {
+    const url = publishState.publishUrl || "【请填写正式入口链接】";
+    const dinner = publishState.dinnerUrl ? `\nAIAA晚餐报名链接：\n${publishState.dinnerUrl}\n` : "";
+    const audienceLine =
+      publishState.audienceType === "企业主与高管"
+        ? "本次重点邀请企业主、高管、企业二代及数字化转型核心人员参与。"
+        : publishState.audienceType === "合作伙伴"
+          ? "欢迎合作伙伴围绕案例展示、客户邀约、现场互动和传播资源提出建议。"
+          : "请内部筹备成员围绕活动内容、现场执行、客户转化和AIAA晚餐积极共创。";
+
+    return `各位好，高原安A效率先锋汇智箱已开放。
+
+${audienceLine}
+
+本次活动基本信息：
+时间：2026年9月3日全天
+地点：成都
+规模：约500人
+主题：AI运用于企业管理的实战分享、飞书效率先锋决赛对决、AI时代企业管理经验交流、飞书应用于现代企业管理的未来与设想
+
+请大家点击入口，提交活动建议、案例策划、互动点子、客户转化方案或AIAA晚餐建议。系统会根据高原安、字节跳动、海科科技三方发起人想法，对投稿进行智能策划撮合，并生成采纳权重与AI建议分。
+
+汇智箱入口：
+${url}
+${dinner}
+积分规则：
+提交有效建议 +1分；被点赞 +0.2分/赞；被采纳 +5分/点；完整策划被采用 +20分。
+
+欢迎大家多投、多评、多补充，让好点子真正进入9月3日活动总策划。`;
+  }, []);
+
+  // Filtered and sorted ideas
+  const visibleIdeas = useMemo(() => {
+    let list = [...state.ideas];
+    if (categoryFilter !== "全部") {
+      list = list.filter((i) => i.category === categoryFilter);
+    }
+    if (sortMode === "new") {
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortMode === "hot") {
+      list.sort((a, b) => (b.votes + b.comments.length) - (a.votes + a.comments.length));
+    } else if (sortMode === "score") {
+      list.sort((a, b) => scoreIdea(b) - scoreIdea(a));
+    }
+    return list;
+  }, [state.ideas, categoryFilter, sortMode, scoreIdea]);
+
+  // Actions
+  const handleVote = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      ideas: prev.ideas.map((idea) =>
+        idea.id === id ? { ...idea, votes: idea.votes + 1 } : idea
+      )
+    }));
+  };
+
+  const handleAddComment = (id: string, text: string) => {
+    if (!text.trim()) return;
+    setState((prev) => ({
+      ...prev,
+      ideas: prev.ideas.map((idea) =>
+        idea.id === id ? { ...idea, comments: [...idea.comments, text.trim()] } : idea
+      )
+    }));
+  };
+
+  const handleIdeaSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const idea: Idea = {
+      id: `idea-${Date.now()}`,
+      author: newIdea.author.trim(),
+      role: newIdea.role.trim(),
+      title: newIdea.title.trim(),
+      category: newIdea.category,
+      phase: newIdea.phase,
+      content: newIdea.content.trim(),
+      votes: 0,
+      adoptedPoints: 0,
+      fullPlan: false,
+      comments: [],
+      createdAt: new Date().toISOString()
+    };
+    setState((prev) => ({
+      ...prev,
+      ideas: [idea, ...prev.ideas]
+    }));
+    setNewIdea({
+      author: "",
+      role: "",
+      title: "",
+      category: categories[0],
+      phase: "方案定稿前",
+      content: ""
+    });
+    changeView("ideas");
+  };
+
+  const handleIntentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setState((prev) => ({
+      ...prev,
+      intent: { ...intentInput }
+    }));
+    changeView("ai-plan");
+  };
+
+  const handlePublishSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setState((prev) => ({
+      ...prev,
+      publish: { ...publishInput }
+    }));
+  };
+
+  const copyPublishMessage = async () => {
+    const message = buildPublishMessage(state.publish);
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopyStatus("已复制，可直接粘贴到飞书群公告。");
+    } catch {
+      setCopyStatus("浏览器未允许自动复制，请手动选中文案复制。");
+    }
+  };
+
+  const handleExportData = () => {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      activityInfo: {
+        date: "2026-09-03",
+        city: "成都",
+        totalPeople: 500,
+        dinnerPeople: 30,
+        dinnerAaPrice: 198,
+        schedule: [
+          "09:00-12:00 上午主论坛",
+          "12:00-13:30 自助餐交流",
+          "13:30-17:30 下午决赛与专题分享，含90分钟热场活动和问题解答",
+          "18:00-20:00 AIAA晚餐"
+        ]
+      },
+      intent: state.intent,
+      publish: state.publish,
+      scoring: {
+        submit: 1,
+        vote: 0.2,
+        adoptedPoint: 5,
+        fullPlan: 20,
+        aiPlanScore: "0-100",
+        aiPlanWeight: "按入选投稿AI建议分占比计算"
+      },
+      ideas: state.ideas,
+      leaderboard: aggregatePeople(),
+      aiPlan: generatePlan()
+    };
+    setExportBoxValue(JSON.stringify(data, null, 2));
+  };
+
+  const handleResetDemo = () => {
+    const defaultPubWithUrl = { ...defaultPublish, publishUrl: getDefaultEntryUrl() };
+    setState({
+      ideas: seedIdeas,
+      intent: defaultIntent,
+      publish: defaultPubWithUrl
+    });
+    setIntentInput(defaultIntent);
+    setPublishInput(defaultPubWithUrl);
+    setExportBoxValue("");
+  };
+
+  // Admin controls
+  const handleAdminAdoptedChange = (id: string, value: number) => {
+    setState((prev) => ({
+      ...prev,
+      ideas: prev.ideas.map((idea) =>
+        idea.id === id ? { ...idea, adoptedPoints: Math.max(0, value) } : idea
+      )
+    }));
+  };
+
+  const handleAdminToggleFullPlan = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      ideas: prev.ideas.map((idea) =>
+        idea.id === id ? { ...idea, fullPlan: !idea.fullPlan } : idea
+      )
+    }));
+  };
+
+  // Metrics
+  const totalIdeas = state.ideas.length;
+  const totalAdoptedPoints = state.ideas.reduce((sum, i) => sum + i.adoptedPoints, 0);
+  const totalPeople = aggregatePeople().length;
+
+  const aiPlan = generatePlan();
+
+  // Handle individual comment UI toggles
+  const [commentViewToggle, setCommentViewToggle] = useState<Record<string, boolean>>({});
+  const toggleCommentSection = (id: string) => {
+    setCommentViewToggle((prev) => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  return (
+    <div className="gaoyuanan-app">
+      <header className="hero">
+        <img src="/assets/hero-huizhi-box.png" alt="高原安A效率先锋汇智箱活动视觉" />
+        <div className="hero-shade"></div>
+        <nav className="topbar" aria-label="主导航">
+          <strong>高原安A效率先锋汇智箱</strong>
+          <div className="nav-actions">
+            <a className="ghost small nav-link" href="/feishu-entry">飞书入口</a>
+            <button className="ghost small" onClick={() => changeView("info")}>活动信息</button>
+            <button className="ghost small" onClick={() => changeView("ideas")}>点子广场</button>
+            <button className="ghost small" onClick={() => changeView("ai-plan")}>智能策划</button>
+            <button className="ghost small" onClick={() => changeView("submit")}>投放想法</button>
+            <button className="ghost small" onClick={() => changeView("admin")}>组委会</button>
+          </div>
+        </nav>
+        <section className="hero-copy">
+          <p>高原安AI效率先锋分享大会 · 共创筹备工具</p>
+          <h1>把每一个好点子，变成可采纳、可计分、可兑换的活动资产。</h1>
+          <div className="hero-metrics" aria-label="活动关键指标">
+            <span><b id="metricIdeas">{totalIdeas}</b>条建议</span>
+            <span><b id="metricAdopted">{totalAdoptedPoints}</b>个采纳点</span>
+            <span><b id="metricPeople">{totalPeople}</b>位共创者</span>
+          </div>
+        </section>
+      </header>
+
+      <main>
+        <section className="mission-band">
+          <div>
+            <h2>活动共创目标</h2>
+            <p>
+              围绕“高原安AI效率先锋分享大会”，征集营销推广、精品案例、互动体验、嘉宾邀请、客户转化、AIAA晚餐等建议。
+              组委会按采纳点计分，积分公开展示，用奖品兑换激励更多人参与。
+            </p>
+          </div>
+          <div className="deadline-strip">
+            <span>方案定稿</span>
+            <strong>2026.07.10 前</strong>
+            <span>活动窗口</span>
+            <strong>2026.08 下旬 - 09 初</strong>
+          </div>
+        </section>
+
+        <section className="feishu-band">
+          <div>
+            <span className="mini-label">飞书参与入口</span>
+            <h2>从飞书群、工作台或多维表格进入汇智箱</h2>
+            <p>适合放在活动筹备群公告、飞书工作台快捷入口、客户报名表提交后页面，也可以嵌入飞书文档作为共创入口。</p>
+          </div>
+          <a className="primary link-button" href="/feishu-entry">打开飞书入口页</a>
+        </section>
+
+        <section className="tabs" aria-label="视图切换">
+          <button className={`tab ${activeView === 'ideas' ? 'active' : ''}`} onClick={() => changeView("ideas")}>点子广场</button>
+          <button className={`tab ${activeView === 'info' ? 'active' : ''}`} onClick={() => changeView("info")}>活动信息</button>
+          <button className={`tab ${activeView === 'intent' ? 'active' : ''}`} onClick={() => changeView("intent")}>发起人想法</button>
+          <button className={`tab ${activeView === 'submit' ? 'active' : ''}`} onClick={() => changeView("submit")}>投放想法</button>
+          <button className={`tab ${activeView === 'ai-plan' ? 'active' : ''}`} onClick={() => changeView("ai-plan")}>智能策划</button>
+          <button className={`tab ${activeView === 'publish' ? 'active' : ''}`} onClick={() => changeView("publish")}>发布入口</button>
+          <button className={`tab ${activeView === 'leaderboard' ? 'active' : ''}`} onClick={() => changeView("leaderboard")}>积分榜</button>
+          <button className={`tab ${activeView === 'roadmap' ? 'active' : ''}`} onClick={() => changeView("roadmap")}>作战图</button>
+          <button className={`tab ${activeView === 'admin' ? 'active' : ''}`} onClick={() => changeView("admin")}>组委会后台</button>
+        </section>
+
+        {/* View: info */}
+        {activeView === "info" && (
+          <section id="view-info" className="view active">
+            <div className="section-head">
+              <div>
+                <h2>活动基本信息</h2>
+                <p>用于约束所有投稿、智能策划和组委会采纳评分的基础盘。</p>
+              </div>
+            </div>
+            <div className="info-layout">
+              <article className="panel info-main">
+                <span className="mini-label">2026年9月3日 · 成都 · 约500人</span>
+                <h2>AI运用于企业管理的实战分享暨飞书效率先锋决赛</h2>
+                <p>面向企业主、高管、企业二代与数字化转型核心人员，围绕AI时代企业管理、飞书效率实践、案例决赛对决和未来设想展开全天活动。</p>
+                <div className="info-stats">
+                  <span><b>500</b>总人数约</span>
+                  <span><b>30</b>AIAA晚餐企业主席位</span>
+                  <span><b>198</b>元/人自愿AA</span>
+                </div>
+              </article>
+              <article className="panel schedule-panel">
+                <h2>当天流程</h2>
+                <ol className="timeline">
+                  <li><strong>09:00-12:00</strong><span>上午主论坛：AI与企业管理实战分享、飞书效率先锋展示。</span></li>
+                  <li><strong>12:00-13:30</strong><span>自助餐与交流，承接上午内容并促进商机互动。</span></li>
+                  <li><strong>13:30-17:30</strong><span>下午决赛与专题分享，中间插入共90分钟热场活动和问题解答。</span></li>
+                  <li><strong>18:00-20:00</strong><span>AIAA晚餐，会中自愿AA制报名，每人198元，主要针对30位企业主深度交流。</span></li>
+                </ol>
+              </article>
+            </div>
+            <div className="theme-grid">
+              <article><h3>AI运用于企业管理的实战分享</h3><p>展示真实企业管理场景中AI提效、降本、增收的实践方法。</p></article>
+              <article><h3>飞书效率先锋决赛对决</h3><p>用轻比赛、重展示的方式呈现内部精品案例和业务改造成果。</p></article>
+              <article><h3>AI时代企业管理经验交流</h3><p>让企业主围绕组织、流程、绩效、销售和客户经营展开交流。</p></article>
+              <article><h3>飞书应用未来与设想</h3><p>邀请字节跳动高级分享，讨论飞书应用于现代企业管理的未来方向。</p></article>
+            </div>
+          </section>
+        )}
+
+        {/* View: ideas */}
+        {activeView === "ideas" && (
+          <section id="view-ideas" className="view active">
+            <div className="section-head">
+              <div>
+                <h2>点子广场</h2>
+                <p>所有人都能看见、点赞、评论，让零散灵感沉淀成活动方案。</p>
+              </div>
+              <div className="filters">
+                <select
+                  id="categoryFilter"
+                  aria-label="分类筛选"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
+                  <option value="全部">全部分类</option>
+                  {categories.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+                <select
+                  id="sortMode"
+                  aria-label="排序方式"
+                  value={sortMode}
+                  onChange={(e) => setSortMode(e.target.value)}
+                >
+                  <option value="hot">热度优先</option>
+                  <option value="new">最新优先</option>
+                  <option value="score">采纳优先</option>
+                </select>
+              </div>
+            </div>
+            <div id="ideaList" class="idea-grid">
+              {visibleIdeas.map((idea) => {
+                const isCommentsOpen = !!commentViewToggle[idea.id];
+                return (
+                  <article key={idea.id} className="idea-card">
+                    <div className="idea-top">
+                      <span className="badge">{idea.category}</span>
+                      <span className="phase">{idea.phase}</span>
+                    </div>
+                    <h3>{idea.title}</h3>
+                    <p className="idea-content">{idea.content}</p>
+                    <div className="author">{idea.author} · {idea.role}</div>
+                    <div className="adoption">
+                      采纳点 <strong>{idea.adoptedPoints}</strong> · 当前积分 <strong>{scoreIdea(idea).toFixed(1)}</strong>
+                      {idea.fullPlan ? " · 完整策划" : ""}
+                    </div>
+                    <div className="card-actions">
+                      <button className="vote-btn" type="button" onClick={() => handleVote(idea.id)}>
+                        点赞 {idea.votes}
+                      </button>
+                      <button className="comment-toggle" type="button" onClick={() => toggleCommentSection(idea.id)}>
+                        评论 {idea.comments.length}
+                      </button>
+                    </div>
+                    {isCommentsOpen && (
+                      <div className="comments">
+                        <div className="comment-list">
+                          {idea.comments.map((comment, index) => (
+                            <p key={index}>{comment}</p>
+                          ))}
+                        </div>
+                        <form
+                          className="comment-form"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const form = e.currentTarget;
+                            const input = form.querySelector('input') as HTMLInputElement;
+                            handleAddComment(idea.id, input.value);
+                            input.value = "";
+                          }}
+                        >
+                          <input placeholder="写一句补充建议" required />
+                          <button type="submit">发送</button>
+                        </form>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* View: submit */}
+        {activeView === "submit" && (
+          <section id="view-submit" className="view active">
+            <div className="form-layout">
+              <form id="ideaForm" className="panel" onSubmit={handleIdeaSubmit}>
+                <h2>投放你的想法</h2>
+                <div className="field-row">
+                  <label>
+                    姓名
+                    <input
+                      id="author"
+                      required
+                      placeholder="例如：张倩"
+                      value={newIdea.author}
+                      onChange={(e) => setNewIdea((prev) => ({ ...prev, author: e.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    部门/角色
+                    <input
+                      id="role"
+                      required
+                      placeholder="例如：市场组 / 销售负责人"
+                      value={newIdea.role}
+                      onChange={(e) => setNewIdea((prev) => ({ ...prev, role: e.target.value }))}
+                    />
+                  </label>
+                </div>
+                <label>
+                  建议标题
+                  <input
+                    id="title"
+                    required
+                    maxLength={40}
+                    placeholder="一句话说清楚你的主张"
+                    value={newIdea.title}
+                    onChange={(e) => setNewIdea((prev) => ({ ...prev, title: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  建议分类
+                  <select
+                    id="category"
+                    required
+                    value={newIdea.category}
+                    onChange={(e) => setNewIdea((prev) => ({ ...prev, category: e.target.value }))}
+                  >
+                    {categories.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  具体内容
+                  <textarea
+                    id="content"
+                    required
+                    rows={7}
+                    placeholder="可以写一个小建议，也可以写完整策划。建议包含：场景、做法、需要资源、预期效果。"
+                    value={newIdea.content}
+                    onChange={(e) => setNewIdea((prev) => ({ ...prev, content: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  可落地时间段
+                  <select
+                    id="phase"
+                    required
+                    value={newIdea.phase}
+                    onChange={(e) => setNewIdea((prev) => ({ ...prev, phase: e.target.value }))}
+                  >
+                    <option value="方案定稿前">方案定稿前</option>
+                    <option value="预热宣传期">预热宣传期</option>
+                    <option value="活动当天">活动当天</option>
+                    <option value="会后转化期">会后转化期</option>
+                  </select>
+                </label>
+                <button className="primary" type="submit">投进汇智箱</button>
+              </form>
+
+              <aside className="panel reward-panel">
+                <h2>计分规则</h2>
+                <ul>
+                  <li><strong>提交</strong><span>+1 分</span></li>
+                  <li><strong>被点赞</strong><span>+0.2 分/赞</span></li>
+                  <li><strong>采纳点</strong><span>+5 分/点</span></li>
+                  <li><strong>完整策划被采用</strong><span>+20 分</span></li>
+                </ul>
+                <h3>奖品建议</h3>
+                <p>30分兑换活动伴手礼，60分兑换定制纪念杯，100分兑换AI效率工具会员或晚餐交流席位优先权。</p>
+              </aside>
+            </div>
+          </section>
+        )}
+
+        {/* View: intent */}
+        {activeView === "intent" && (
+          <section id="view-intent" className="view active">
+            <div className="section-head">
+              <div>
+                <h2>发起人想法</h2>
+                <p>由高原安、字节跳动、海科科技共同发起，所有投稿和智能策划都围绕这里的目标自动匹配。</p>
+              </div>
+            </div>
+            <form id="intentForm" className="panel intent-form" onSubmit={handleIntentSubmit}>
+              <div className="field-row">
+                <label>
+                  主办方核心目的
+                  <textarea
+                    id="intentPurpose"
+                    rows={5}
+                    value={intentInput.purpose}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, purpose: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  希望达成的效果
+                  <textarea
+                    id="intentOutcome"
+                    rows={5}
+                    value={intentInput.outcome}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, outcome: e.target.value }))}
+                  />
+                </label>
+              </div>
+              <div className="field-row">
+                <label>
+                  投入资源与边界
+                  <textarea
+                    id="intentResources"
+                    rows={5}
+                    value={intentInput.resources}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, resources: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  智能策划偏好关键词
+                  <textarea
+                    id="intentKeywords"
+                    rows={5}
+                    value={intentInput.keywords}
+                    onChange={(e) => setIntentInput((prev) => ({ ...prev, keywords: e.target.value }))}
+                  />
+                </label>
+              </div>
+              <button className="primary" type="submit">保存发起人想法并刷新智能策划</button>
+            </form>
+            <div className="sponsor-grid">
+              <article><strong>高原安</strong><span>总发起、客户经营、企业管理实战案例、AIAA晚餐转化。</span></article>
+              <article><strong>字节跳动</strong><span>飞书站台、高级分享、数字化应用未来设想、原厂背书。</span></article>
+              <article><strong>海科科技</strong><span>活动策划执行、客户邀约、现场互动、内容包装与传播。</span></article>
+            </div>
+          </section>
+        )}
+
+        {/* View: ai-plan */}
+        {activeView === "ai-plan" && (
+          <section id="view-ai-plan" className="view active">
+            <div className="section-head">
+              <div>
+                <h2>智能策划撮合结果</h2>
+                <p>根据发起人想法、活动基本信息和全部投稿进行解析，自动生成总策划草案、采纳权重和AI建议分。</p>
+              </div>
+              <button id="refreshPlanBtn" className="secondary" onClick={() => generatePlan()}>重新生成</button>
+            </div>
+            <div className="ai-plan-layout">
+              <article className="panel plan-result">
+                <span className="mini-label">AI智能生成 · 可供组委会复核</span>
+                <h2 id="planTitle">{aiPlan.title}</h2>
+                <div id="planNarrative" className="plan-narrative">
+                  <h3>一、策划主线</h3>
+                  <p>以“AI运用于企业管理的实战分享”为价值入口，以“飞书效率先锋决赛对决”为现场亮点，以“字节跳动高级分享”为原厂背书，以“AIAA晚餐”为深度转化承接，形成从认知、体验、互动到商机交流的全天闭环。</p>
+                  <h3>二、建议活动结构</h3>
+                  <p>上午聚焦AI企业管理实战与飞书效率案例，强化企业主对真实业务结果的感知；中午用自助餐承接交流；下午以决赛、热场活动和问题解答增强参与；晚间用198元/人的AA制AIAA晚餐筛选高意向企业主。</p>
+                  <h3>三、AI优先采纳方向</h3>
+                  <ul>
+                    {aiPlan.selected.map((idea) => (
+                      <li key={idea.id}>
+                        {idea.title} <strong>{idea.planWeight}%</strong>
+                      </li>
+                    ))}
+                  </ul>
+                  <h3>四、策划判断</h3>
+                  <p>当前投稿中，系统优先推荐能同时满足企业主价值、现场可执行、飞书合规、传播亮点和会后转化的内容。权重越高，表示越适合进入总策划核心模块；AI建议分可作为组委会复核采纳点的参考。</p>
+                </div>
+              </article>
+              <aside className="panel">
+                <h2>匹配逻辑</h2>
+                <p className="muted">系统会优先选择符合发起人目的、活动主题、企业主价值、飞书合规边界、现场可执行性的投稿。</p>
+                <div id="planKeywords" className="keyword-cloud">
+                  {aiPlan.keywords.map((k, index) => (
+                    <span key={index}>{k}</span>
+                  ))}
+                </div>
+              </aside>
+            </div>
+            <div className="panel">
+              <h2>投稿采纳权重与AI建议打分</h2>
+              <div id="aiWeightList" className="weight-list">
+                {aiPlan.ranked.map((idea) => (
+                  <article key={idea.id} className="weight-row">
+                    <div>
+                      <h3>{idea.title}</h3>
+                      <p>{idea.author} · {idea.category} · 匹配关键词：{idea.matchedKeywords.join("、") || "按主题匹配"}</p>
+                    </div>
+                    <div className="score-pill">{idea.aiScore}</div>
+                    <div className="weight-meter"><span style={{ width: `${idea.aiScore}%` }}></span></div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* View: publish */}
+        {activeView === "publish" && (
+          <section id="view-publish" className="view active">
+            <div className="section-head">
+              <div>
+                <h2>发布入口</h2>
+                <p>把汇智箱发给参与人前，先选择合适的发布方式，并生成飞书群公告文案。</p>
+              </div>
+            </div>
+            <div className="publish-grid">
+              <article className="panel publish-card">
+                <span className="mini-label">推荐正式版</span>
+                <h3>部署成统一网址</h3>
+                <p>适合正式活动。参与人通过同一个 HTTPS 链接进入，后续可接飞书多维表格或数据库集中汇总投稿、点赞、评论和积分。</p>
+              </article>
+              <article className="panel publish-card">
+                <span className="mini-label">临时内测</span>
+                <h3>办公室局域网访问</h3>
+                <p>适合同一网络下短时间试用。需要你的电脑保持开机并运行本地服务，链接形如：<strong>http://你的电脑IP:5178/feishu-entry.html</strong></p>
+              </article>
+              <article className="panel publish-card">
+                <span className="mini-label">仅演示</span>
+                <h3>发送文件夹</h3>
+                <p>适合让别人看界面。每个人的数据保存在自己浏览器里，不能自动汇总，不建议用于正式征集。</p>
+              </article>
+            </div>
+            <div className="publish-layout">
+              <form id="publishForm" className="panel" onSubmit={handlePublishSubmit}>
+                <h2>生成飞书邀请文案</h2>
+                <label>
+                  正式入口链接
+                  <input
+                    id="publishUrl"
+                    placeholder="例如：https://your-domain.com/feishu-entry.html"
+                    value={publishInput.publishUrl}
+                    onChange={(e) => setPublishInput((prev) => ({ ...prev, publishUrl: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  AIAA晚餐报名链接
+                  <input
+                    id="dinnerUrl"
+                    placeholder="可选：飞书表单/多维表格报名链接"
+                    value={publishInput.dinnerUrl}
+                    onChange={(e) => setPublishInput((prev) => ({ ...prev, dinnerUrl: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  发布对象
+                  <select
+                    id="audienceType"
+                    value={publishInput.audienceType}
+                    onChange={(e) => setPublishInput((prev) => ({ ...prev, audienceType: e.target.value }))}
+                  >
+                    <option value="内部筹备成员">内部筹备成员</option>
+                    <option value="企业主与高管">企业主与高管</option>
+                    <option value="合作伙伴">合作伙伴</option>
+                  </select>
+                </label>
+                <button className="primary" type="submit">生成文案</button>
+              </form>
+              <article className="panel export-panel">
+                <h2>飞书群公告文案</h2>
+                <textarea id="publishMessage" rows={14} readOnly value={buildPublishMessage(state.publish)} />
+                <button id="copyPublishBtn" className="secondary" type="button" onClick={copyPublishMessage}>
+                  复制文案
+                </button>
+                {copyStatus && <p id="copyStatus" className="muted">{copyStatus}</p>}
+              </article>
+            </div>
+          </section>
+        )}
+
+        {/* View: leaderboard */}
+        {activeView === "leaderboard" && (
+          <section id="view-leaderboard" className="view active">
+            <div className="section-head">
+              <div>
+                <h2>积分榜</h2>
+                <p>公开透明，让“参与感”变成持续动力。</p>
+              </div>
+            </div>
+            <div id="leaderboard" className="leaderboard">
+              {aggregatePeople().map((person, index) => (
+                <article key={index} className="leader-row">
+                  <span className="rank">{index + 1}</span>
+                  <div>
+                    <h3>{person.author} <small>{person.role}</small></h3>
+                    <p className="muted">
+                      {person.ideas}条建议 · {person.votes}个赞 · {person.adoptedPoints}个采纳点 · {person.fullPlans}份完整策划
+                    </p>
+                  </div>
+                  <strong className="leader-score">{person.score.toFixed(1)} 分</strong>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* View: roadmap */}
+        {activeView === "roadmap" && (
+          <section id="view-roadmap" className="view active">
+            <div className="section-head">
+              <div>
+                <h2>活动作战图</h2>
+                <p>把会议纪要拆成可征集、可推进、可复盘的主题。</p>
+              </div>
+            </div>
+            <div className="roadmap">
+              <article>
+                <span>01</span>
+                <h3>活动定位</h3>
+                <p>高原安AI效率先锋分享大会，面向有科技头脑、想进步的民营企业核心人员。</p>
+              </article>
+              <article>
+                <span>02</span>
+                <h3>内容结构</h3>
+                <p>轻比赛、重展示，内部精品案例覆盖供应链、财务、绩效、项目管理等场景。</p>
+              </article>
+              <article>
+                <span>03</span>
+                <h3>互动增长</h3>
+                <p>现场提问、投票抽奖、小游戏、AI工具幸运观众，兼顾客户信息收集。</p>
+              </article>
+              <article>
+                <span>04</span>
+                <h3>外部背书</h3>
+                <p>争取飞书产品团队、企业主、行业专家、科技局相关领导参与。</p>
+              </article>
+              <article>
+                <span>05</span>
+                <h3>宣传转化</h3>
+                <p>小红书、抖音、飞书官方渠道预热，直播录播扩大传播，会后AIAA晚餐促进商机。</p>
+              </article>
+              <article>
+                <span>06</span>
+                <h3>合规边界</h3>
+                <p>若挂飞书名，现场不做直接售卖；销售表达聚焦飞书使用方法与应用经验。</p>
+              </article>
+            </div>
+          </section>
+        )}
+
+        {/* View: admin */}
+        {activeView === "admin" && (
+          <section id="view-admin" className="view active">
+            <div className="admin-grid">
+              <div className="panel">
+                <h2>组委会采纳台</h2>
+                <p className="muted">输入采纳点数量或标记完整策划，系统自动更新积分榜。</p>
+                <div id="adminList" className="admin-list">
+                  {state.ideas.map((idea) => (
+                    <article key={idea.id} className="admin-item">
+                      <div>
+                        <h3>{idea.title}</h3>
+                        <p>{idea.author} · {idea.category} · {scoreIdea(idea).toFixed(1)}分</p>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={idea.adoptedPoints}
+                        aria-label="采纳点数量"
+                        onChange={(e) => handleAdminAdoptedChange(idea.id, Number(e.target.value))}
+                      />
+                      <button
+                        className="secondary full-plan"
+                        onClick={() => handleAdminToggleFullPlan(idea.id)}
+                      >
+                        {idea.fullPlan ? "取消完整策划" : "标记完整策划"}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </div>
+              <div className="panel export-panel">
+                <h2>数据流转</h2>
+                <p>当前版本保存在本机浏览器，可导出JSON给飞书多维表格或后续后台导入。</p>
+                <button id="exportBtn" className="secondary" onClick={handleExportData}>导出数据</button>
+                <button id="resetDemoBtn" className="danger" onClick={handleResetDemo}>恢复演示数据</button>
+                <textarea
+                  id="exportBox"
+                  readOnly
+                  rows={10}
+                  placeholder="导出结果会显示在这里"
+                  value={exportBoxValue}
+                  onChange={(e) => setExportBoxValue(e.target.value)}
+                />
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}

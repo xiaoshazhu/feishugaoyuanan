@@ -1,0 +1,176 @@
+.feishu-entry-app {
+  --ink: #14211f;
+  --muted: #61706c;
+  --line: #dce5e0;
+  --paper: #f7faf7;
+  --panel: #ffffff;
+  --teal: #12695f;
+  --teal-dark: #0a443f;
+  --mint: #dff1e8;
+  --shadow: 0 18px 48px rgba(15, 42, 38, 0.14);
+
+  min-height: 100vh;
+  font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+  text-align: left;
+  .entry-shell {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 36px 0 56px;
+  }
+  
+  .entry-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 42px;
+    align-items: center;
+    min-height: 620px;
+    color: #fff;
+  }
+  
+  .entry-copy h1 {
+    margin: 0 0 18px;
+    font-size: clamp(42px, 7vw, 78px);
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+  
+  .entry-copy p {
+    max-width: 680px;
+    color: #e7f3ef;
+    font-size: 18px;
+    line-height: 1.8;
+  }
+  
+  .entry-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  
+  .entry-actions .link-button {
+    min-height: 48px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-weight: 800;
+  }
+  
+  .phone-preview {
+    min-height: 520px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 28px;
+    background: rgba(247, 250, 247, 0.92);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+    color: var(--ink);
+  }
+  
+  .phone-bar {
+    width: 84px;
+    height: 6px;
+    margin: 0 auto 28px;
+    border-radius: 99px;
+    background: #c8d5d0;
+  }
+  
+  .feishu-card {
+    padding: 18px;
+    border-radius: 14px;
+    background: linear-gradient(160deg, #ffffff, #e7f4ef);
+    border: 1px solid #d7e4df;
+  }
+  
+  .feishu-card span,
+  .feishu-card strong {
+    color: var(--teal);
+    font-weight: 800;
+  }
+  
+  .feishu-card h2 {
+    margin: 12px 0 8px;
+  }
+  
+  .mini-feed {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  
+  .mini-feed p {
+    margin: 0;
+    padding: 13px 14px;
+    border-radius: 10px;
+    background: #fff;
+    color: #40514c;
+  }
+  
+  .entry-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  
+  .entry-panel,
+  .entry-config {
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow);
+  }
+  
+  .entry-panel {
+    padding: 22px;
+  }
+  
+  .entry-panel span {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 14px;
+    border-radius: 8px;
+    background: var(--teal);
+    color: #fff;
+    font-weight: 800;
+  }
+  
+  .entry-panel p,
+  .entry-config p,
+  .entry-config li {
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  
+  .entry-config {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 24px;
+    margin-top: 16px;
+    padding: 26px;
+  }
+  
+  .entry-config ul {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding-left: 20px;
+  }
+  
+}
+
+@media (max-width: 920px) {
+  .feishu-entry-app {
+      .entry-hero,
+      .entry-config {
+      .entry-grid {
+  }
+}
+
+@media (max-width: 640px) {
+  .feishu-entry-app {
+      .entry-grid,
+      .entry-shell {
+      .entry-hero {
+      .phone-preview {
+  }
+}
