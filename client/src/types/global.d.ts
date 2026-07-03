@@ -1,5 +1,9 @@
 declare module '*.css';
 
+interface Window {
+  __BASENAME__?: string;
+}
+
 // Type declarations for importing static assets
 declare module '*.png' {
   const value: string;

@@ -12,11 +12,16 @@ import { createPortal } from 'react-dom';
 import { Toaster } from '@client/src/components/ui/sonner';
 
 const getClientBasePath = () => {
-  if (process.env.CLIENT_BASE_PATH) {
-    return process.env.CLIENT_BASE_PATH;
+  if (typeof window === 'undefined') {
+    return '/';
   }
 
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/client')) {
+  const injectedBasePath = window.__BASENAME__;
+  if (injectedBasePath && !injectedBasePath.includes('{{')) {
+    return injectedBasePath;
+  }
+
+  if (window.location.pathname.startsWith('/client')) {
     return '/client/';
   }
 
