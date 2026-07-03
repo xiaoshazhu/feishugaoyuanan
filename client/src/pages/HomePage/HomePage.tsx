@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
 import './HomePage.css';
 
 const STORAGE_KEY = "gaoyuan-ai-huizhi-box-v1";
-const validViews = ["ideas", "info", "intent", "submit", "ai-plan", "publish", "leaderboard", "roadmap", "admin"];
+const validViews = ["ideas", "info", "submit", "publish", "leaderboard", "roadmap", "admin"];
 
 const categories = [
   "活动定位",
@@ -14,8 +15,7 @@ const categories = [
   "客户转化",
   "AIAA晚餐",
   "合规边界",
-  "现场执行",
-  "智能策划"
+  "现场执行"
 ];
 
 const defaultIntent = {
@@ -179,6 +179,23 @@ export default function HomePage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
+  // Load ideas from backend multitenant/Bitable source on mount
+  useEffect(() => {
+    axiosForBackend({
+      url: "/api/huizhi/ideas",
+      method: "GET"
+    }).then((res) => {
+      if (Array.isArray(res.data)) {
+        setState((prev) => ({
+          ...prev,
+          ideas: res.data
+        }));
+      }
+    }).catch((err) => {
+      console.error("Failed to fetch ideas from backend database:", err);
+    });
+  }, []);
+
   // Sync hash to activeView
   useEffect(() => {
     const handleHashChange = () => {
@@ -251,7 +268,7 @@ export default function HomePage() {
     if (intentAllText.includes(idea.category) && !matched.includes(idea.category)) {
       matched.push(idea.category);
     }
-    const themeBoost = ["精品案例", "互动体验", "客户转化", "AIAA晚餐", "合规边界", "智能策划"].includes(idea.category) ? 12 : 6;
+    const themeBoost = ["精品案例", "互动体验", "客户转化", "AIAA晚餐", "合规边界"].includes(idea.category) ? 12 : 6;
     const adoptionBoost = idea.adoptedPoints * 8 + (idea.fullPlan ? 18 : 0);
     const crowdBoost = Math.min(18, idea.votes * 0.7 + idea.comments.length * 1.8);
     const keywordScore = Math.min(38, matched.length * 7);
@@ -331,62 +348,76 @@ ${dinner}
 
   // Actions
   const handleVote = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      ideas: prev.ideas.map((idea) =>
-        idea.id === id ? { ...idea, votes: idea.votes + 1 } : idea
-      )
-    }));
+    axiosForBackend({
+      url: `/api/huizhi/ideas/${id}/vote`,
+      method: "POST"
+    }).then((res) => {
+      if (res.data?.success) {
+        setState((prev) => ({
+          ...prev,
+          ideas: prev.ideas.map((idea) =>
+            idea.id === id ? { ...idea, votes: idea.votes + 1 } : idea
+          )
+        }));
+      }
+    }).catch((err) => {
+      console.error("Failed to vote for idea:", err);
+    });
   };
 
   const handleAddComment = (id: string, text: string) => {
     if (!text.trim()) return;
-    setState((prev) => ({
-      ...prev,
-      ideas: prev.ideas.map((idea) =>
-        idea.id === id ? { ...idea, comments: [...idea.comments, text.trim()] } : idea
-      )
-    }));
+    axiosForBackend({
+      url: `/api/huizhi/ideas/${id}/comment`,
+      method: "POST",
+      data: { commentText: text.trim() }
+    }).then((res) => {
+      if (res.data?.comments) {
+        setState((prev) => ({
+          ...prev,
+          ideas: prev.ideas.map((idea) =>
+            idea.id === id ? { ...idea, comments: res.data.comments } : idea
+          )
+        }));
+      }
+    }).catch((err) => {
+      console.error("Failed to add comment:", err);
+    });
   };
 
   const handleIdeaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const idea: Idea = {
-      id: `idea-${Date.now()}`,
+    const payload = {
       author: newIdea.author.trim(),
       role: newIdea.role.trim(),
       title: newIdea.title.trim(),
       category: newIdea.category,
       phase: newIdea.phase,
-      content: newIdea.content.trim(),
-      votes: 0,
-      adoptedPoints: 0,
-      fullPlan: false,
-      comments: [],
-      createdAt: new Date().toISOString()
+      content: newIdea.content.trim()
     };
-    setState((prev) => ({
-      ...prev,
-      ideas: [idea, ...prev.ideas]
-    }));
-    setNewIdea({
-      author: "",
-      role: "",
-      title: "",
-      category: categories[0],
-      phase: "方案定稿前",
-      content: ""
+    axiosForBackend({
+      url: "/api/huizhi/ideas",
+      method: "POST",
+      data: payload
+    }).then((res) => {
+      if (res.data) {
+        setState((prev) => ({
+          ...prev,
+          ideas: [res.data, ...prev.ideas]
+        }));
+        setNewIdea({
+          author: "",
+          role: "",
+          title: "",
+          category: categories[0],
+          phase: "方案定稿前",
+          content: ""
+        });
+        changeView("ideas");
+      }
+    }).catch((err) => {
+      console.error("Failed to submit idea:", err);
     });
-    changeView("ideas");
-  };
-
-  const handleIntentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setState((prev) => ({
-      ...prev,
-      intent: { ...intentInput }
-    }));
-    changeView("ai-plan");
   };
 
   const handlePublishSubmit = (e: React.FormEvent) => {
@@ -454,21 +485,45 @@ ${dinner}
 
   // Admin controls
   const handleAdminAdoptedChange = (id: string, value: number) => {
-    setState((prev) => ({
-      ...prev,
-      ideas: prev.ideas.map((idea) =>
-        idea.id === id ? { ...idea, adoptedPoints: Math.max(0, value) } : idea
-      )
-    }));
+    const val = Math.max(0, value);
+    axiosForBackend({
+      url: `/api/huizhi/ideas/${id}/adopted`,
+      method: "POST",
+      data: { value: val }
+    }).then((res) => {
+      if (res.data?.success) {
+        setState((prev) => ({
+          ...prev,
+          ideas: prev.ideas.map((idea) =>
+            idea.id === id ? { ...idea, adoptedPoints: val } : idea
+          )
+        }));
+      }
+    }).catch((err) => {
+      console.error("Failed to update adopted points:", err);
+    });
   };
 
   const handleAdminToggleFullPlan = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      ideas: prev.ideas.map((idea) =>
-        idea.id === id ? { ...idea, fullPlan: !idea.fullPlan } : idea
-      )
-    }));
+    const currentIdea = state.ideas.find((i) => i.id === id);
+    if (!currentIdea) return;
+    const targetFullPlan = !currentIdea.fullPlan;
+    axiosForBackend({
+      url: `/api/huizhi/ideas/${id}/toggle-full-plan`,
+      method: "POST",
+      data: { fullPlan: targetFullPlan }
+    }).then((res) => {
+      if (res.data?.success) {
+        setState((prev) => ({
+          ...prev,
+          ideas: prev.ideas.map((idea) =>
+            idea.id === id ? { ...idea, fullPlan: targetFullPlan } : idea
+          )
+        }));
+      }
+    }).catch((err) => {
+      console.error("Failed to toggle full plan status:", err);
+    });
   };
 
   // Metrics
@@ -498,7 +553,6 @@ ${dinner}
             <a className="ghost small nav-link" href="/feishu-entry">飞书入口</a>
             <button className="ghost small" onClick={() => changeView("info")}>活动信息</button>
             <button className="ghost small" onClick={() => changeView("ideas")}>点子广场</button>
-            <button className="ghost small" onClick={() => changeView("ai-plan")}>智能策划</button>
             <button className="ghost small" onClick={() => changeView("submit")}>投放想法</button>
             <button className="ghost small" onClick={() => changeView("admin")}>组委会</button>
           </div>
@@ -543,9 +597,7 @@ ${dinner}
         <section className="tabs" aria-label="视图切换">
           <button className={`tab ${activeView === 'ideas' ? 'active' : ''}`} onClick={() => changeView("ideas")}>点子广场</button>
           <button className={`tab ${activeView === 'info' ? 'active' : ''}`} onClick={() => changeView("info")}>活动信息</button>
-          <button className={`tab ${activeView === 'intent' ? 'active' : ''}`} onClick={() => changeView("intent")}>发起人想法</button>
           <button className={`tab ${activeView === 'submit' ? 'active' : ''}`} onClick={() => changeView("submit")}>投放想法</button>
-          <button className={`tab ${activeView === 'ai-plan' ? 'active' : ''}`} onClick={() => changeView("ai-plan")}>智能策划</button>
           <button className={`tab ${activeView === 'publish' ? 'active' : ''}`} onClick={() => changeView("publish")}>发布入口</button>
           <button className={`tab ${activeView === 'leaderboard' ? 'active' : ''}`} onClick={() => changeView("leaderboard")}>积分榜</button>
           <button className={`tab ${activeView === 'roadmap' ? 'active' : ''}`} onClick={() => changeView("roadmap")}>作战图</button>
@@ -767,125 +819,6 @@ ${dinner}
                 <h3>奖品建议</h3>
                 <p>30分兑换活动伴手礼，60分兑换定制纪念杯，100分兑换AI效率工具会员或晚餐交流席位优先权。</p>
               </aside>
-            </div>
-          </section>
-        )}
-
-        {/* View: intent */}
-        {activeView === "intent" && (
-          <section id="view-intent" className="view active">
-            <div className="section-head">
-              <div>
-                <h2>发起人想法</h2>
-                <p>由高原安、字节跳动、海科科技共同发起，所有投稿和智能策划都围绕这里的目标自动匹配。</p>
-              </div>
-            </div>
-            <form id="intentForm" className="panel intent-form" onSubmit={handleIntentSubmit}>
-              <div className="field-row">
-                <label>
-                  主办方核心目的
-                  <textarea
-                    id="intentPurpose"
-                    rows={5}
-                    value={intentInput.purpose}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, purpose: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  希望达成的效果
-                  <textarea
-                    id="intentOutcome"
-                    rows={5}
-                    value={intentInput.outcome}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, outcome: e.target.value }))}
-                  />
-                </label>
-              </div>
-              <div className="field-row">
-                <label>
-                  投入资源与边界
-                  <textarea
-                    id="intentResources"
-                    rows={5}
-                    value={intentInput.resources}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, resources: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  智能策划偏好关键词
-                  <textarea
-                    id="intentKeywords"
-                    rows={5}
-                    value={intentInput.keywords}
-                    onChange={(e) => setIntentInput((prev) => ({ ...prev, keywords: e.target.value }))}
-                  />
-                </label>
-              </div>
-              <button className="primary" type="submit">保存发起人想法并刷新智能策划</button>
-            </form>
-            <div className="sponsor-grid">
-              <article><strong>高原安</strong><span>总发起、客户经营、企业管理实战案例、AIAA晚餐转化。</span></article>
-              <article><strong>字节跳动</strong><span>飞书站台、高级分享、数字化应用未来设想、原厂背书。</span></article>
-              <article><strong>海科科技</strong><span>活动策划执行、客户邀约、现场互动、内容包装与传播。</span></article>
-            </div>
-          </section>
-        )}
-
-        {/* View: ai-plan */}
-        {activeView === "ai-plan" && (
-          <section id="view-ai-plan" className="view active">
-            <div className="section-head">
-              <div>
-                <h2>智能策划撮合结果</h2>
-                <p>根据发起人想法、活动基本信息和全部投稿进行解析，自动生成总策划草案、采纳权重和AI建议分。</p>
-              </div>
-              <button id="refreshPlanBtn" className="secondary" onClick={() => generatePlan()}>重新生成</button>
-            </div>
-            <div className="ai-plan-layout">
-              <article className="panel plan-result">
-                <span className="mini-label">AI智能生成 · 可供组委会复核</span>
-                <h2 id="planTitle">{aiPlan.title}</h2>
-                <div id="planNarrative" className="plan-narrative">
-                  <h3>一、策划主线</h3>
-                  <p>以“AI运用于企业管理的实战分享”为价值入口，以“飞书效率先锋决赛对决”为现场亮点，以“字节跳动高级分享”为原厂背书，以“AIAA晚餐”为深度转化承接，形成从认知、体验、互动到商机交流的全天闭环。</p>
-                  <h3>二、建议活动结构</h3>
-                  <p>上午聚焦AI企业管理实战与飞书效率案例，强化企业主对真实业务结果的感知；中午用自助餐承接交流；下午以决赛、热场活动和问题解答增强参与；晚间用198元/人的AA制AIAA晚餐筛选高意向企业主。</p>
-                  <h3>三、AI优先采纳方向</h3>
-                  <ul>
-                    {aiPlan.selected.map((idea) => (
-                      <li key={idea.id}>
-                        {idea.title} <strong>{idea.planWeight}%</strong>
-                      </li>
-                    ))}
-                  </ul>
-                  <h3>四、策划判断</h3>
-                  <p>当前投稿中，系统优先推荐能同时满足企业主价值、现场可执行、飞书合规、传播亮点和会后转化的内容。权重越高，表示越适合进入总策划核心模块；AI建议分可作为组委会复核采纳点的参考。</p>
-                </div>
-              </article>
-              <aside className="panel">
-                <h2>匹配逻辑</h2>
-                <p className="muted">系统会优先选择符合发起人目的、活动主题、企业主价值、飞书合规边界、现场可执行性的投稿。</p>
-                <div id="planKeywords" className="keyword-cloud">
-                  {aiPlan.keywords.map((k, index) => (
-                    <span key={index}>{k}</span>
-                  ))}
-                </div>
-              </aside>
-            </div>
-            <div className="panel">
-              <h2>投稿采纳权重与AI建议打分</h2>
-              <div id="aiWeightList" className="weight-list">
-                {aiPlan.ranked.map((idea) => (
-                  <article key={idea.id} className="weight-row">
-                    <div>
-                      <h3>{idea.title}</h3>
-                      <p>{idea.author} · {idea.category} · 匹配关键词：{idea.matchedKeywords.join("、") || "按主题匹配"}</p>
-                    </div>
-                    <div className="score-pill">{idea.aiScore}</div>
-                    <div className="weight-meter"><span style={{ width: `${idea.aiScore}%` }}></span></div>
-                  </article>
-                ))}
-              </div>
             </div>
           </section>
         )}

@@ -16,6 +16,17 @@
 - 新接口放在 `server/modules` 下建立独立 Nest 模块，并在 `server/app.module.ts` 的业务模块区域引入。
 - 飞书、多维表格、用户身份等能力后续应按妙搭模板支持的方式接入，不再新增独立 Express 服务或根目录原生 HTML 入口。
 
+## 飞书多维表格集成配置
+
+本项目已支持对接飞书多维表格（Bitable）存储：
+1. **环境变量**：在根目录 `.env` 文件中配置以下参数：
+   * `FEISHU_APP_ID`: 飞书自建应用的 App ID
+   * `FEISHU_APP_SECRET`: 飞书自建应用的 App Secret
+   * `FEISHU_BITABLE_APP_TOKEN`: 用于存储数据的多维表格 app_token
+   * `FEISHU_BITABLE_TABLE_ID`: 数据表 table_id
+2. **应用授权**：请确保该自建应用在飞书开放平台拥有多维表格读写权限，且已将该应用添加为目标表格的协作者（协同编辑权限）。
+3. **本地降级**：若未配置或配置无效，应用会自动降级为内存运行模式（内置 seedIdeas），不会影响正常开发预览。
+
 ## 可用命令
 
 ```bash

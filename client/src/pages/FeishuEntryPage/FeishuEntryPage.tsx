@@ -11,14 +11,14 @@ export default function FeishuEntryPage() {
             <span className="mini-label">飞书入口</span>
             <h1>高原安A效率先锋汇智箱</h1>
             <p>
-              欢迎从飞书进入活动共创空间。你可以投放建议、点赞补充、查看积分榜；系统会根据高原安、字节跳动、海科科技三方发起人想法，智能生成总策划撮合结果。
+              欢迎从飞书进入活动共创空间。你可以投放建议、点赞评论、查看共创排行榜；公开征集营销推广、精品案例、互动体验、嘉宾邀请、客户转化与AIAA晚餐等共创建议。
             </p>
             <div className="entry-actions">
               <Link className="primary link-button" to="/#submit">
                 立即投放想法
               </Link>
-              <Link className="secondary link-button" to="/#ai-plan">
-                查看智能策划
+              <Link className="secondary link-button" to="/#leaderboard">
+                查看积分榜
               </Link>
             </div>
           </div>
@@ -28,7 +28,7 @@ export default function FeishuEntryPage() {
               <span>飞书活动筹备群</span>
               <h2>今日共创任务</h2>
               <p>请围绕9月3日全天活动、案例展示、互动体验、客户转化、AIAA晚餐提交建议。</p>
-              <strong>AI将自动生成采纳权重</strong>
+              <strong>公开展示积分排行榜</strong>
             </div>
             <div className="mini-feed">
               <p>精品案例：真实业务前后对比</p>
@@ -51,8 +51,8 @@ export default function FeishuEntryPage() {
           </article>
           <article className="entry-panel">
             <span>03</span>
-            <h2>智能策划撮合</h2>
-            <p>系统按发起人需求、活动信息和全部投稿计算匹配度，生成总策划草案、采纳权重和AI建议分。</p>
+            <h2>积分榜与兑换</h2>
+            <p>按提交点子、获得点赞、采纳评分自动更新个人积分，多档好礼激励全员共创参与。</p>
           </article>
         </section>
 
