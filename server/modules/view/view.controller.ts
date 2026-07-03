@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Controller, Get, Req, Res, NotFoundException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
 @Controller()
@@ -6,6 +6,11 @@ export class ViewController {
 
   @Get(['/', '*'])
   async render(@Req() req: Request, @Res() res: Response) {
+    const isApi = req.path.startsWith('/api') || req.path.startsWith('/openapi') || req.path.startsWith('/__innerapi__');
+    if (isApi) {
+      throw new NotFoundException(`Cannot GET ${req.path}`);
+    }
+
     const useDevClient =
       process.env.NODE_ENV === 'development' && !process.env.SUDA_DATABASE_URL;
     if (useDevClient) {
