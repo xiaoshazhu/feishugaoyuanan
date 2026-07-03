@@ -165,7 +165,7 @@ export class HuizhiService {
           const authorObj = rawName[0] || {};
           authorName = authorObj.name || authorObj.en_name || '';
         }
-        let role = String(fields['部门'] || '');
+        let role = String(fields['所属单位'] || fields['部门'] || '');
 
         if (!authorName) {
           // 尝试从部门字段中解码出外部投稿人名字，格式为 "技术组 (王某测试)"
@@ -338,7 +338,7 @@ export class HuizhiService {
       '建议分类主': newIdea.category,
       '建议分类副': newIdea.phase,
       '姓名': newIdea.author,
-      '部门': newIdea.role,
+      '所属单位': newIdea.role,
       '点子评分': 0,
       '点子采纳': null
     };
