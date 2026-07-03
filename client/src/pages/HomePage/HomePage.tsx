@@ -1161,7 +1161,12 @@ ${dinner}
                   发起人想法
                 </h2>
                 <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.95rem' }}>
-                  由高原安、字节跳动、海科科技共同发起，所有投稿和智能策划都围绕这里的目标自动匹配。
+                  由{(() => {
+                    const sponsors = bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0
+                      ? bootstrapConfig.sponsors.map((x: any) => x.企业名称).join('、')
+                      : "高原安、字节跳动、海科科技";
+                    return sponsors;
+                  })()}共同发起，所有投稿和智能策划都围绕这里的目标自动匹配。
                 </p>
               </div>
             </div>
@@ -1179,7 +1184,7 @@ ${dinner}
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
                   <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.7', textAlign: 'justify' }}>
-                    高原安、字节跳动、海科科技共同发起，打造一场面向约500位企业核心人员的AI效率先锋活动，展示AI和飞书在企业管理中的实战价值，提升行业影响力并促进高质量商机转化。
+                    {bootstrapConfig.infoConfig?.主办方核心目的 || "高原安、字节跳动、海科科技共同发起，打造一场面向约500位企业核心人员的AI效率先锋活动，展示AI和飞书在企业管理中的实战价值，提升行业影响力并促进高质量商机转化。"}
                   </p>
                 </div>
               </div>
@@ -1195,24 +1200,20 @@ ${dinner}
                     <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>02</span>
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
-                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
-                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
-                      <span>让企业主看见真实案例、愿意交流、愿意留下需求；</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
-                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
-                      <span>让飞书效率先锋决赛形成传播亮点；</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
-                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
-                      <span>让AIAA晚餐承接30位企业主深度交流；</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
-                      <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
-                      <span>最终沉淀一份可执行、可传播、可复盘的总策划。</span>
-                    </li>
-                  </ul>
+                  {(() => {
+                    const outcomeText = bootstrapConfig.infoConfig?.希望达成的效果 || "让企业主看见真实案例、愿意交流、愿意留下需求；让飞书效率先锋决赛形成传播亮点；让AIAA晚餐承接30位企业主深度交流；最终沉淀一份可执行、可传播、可复盘的总策划。";
+                    const items = outcomeText.split(/[;；。]/).map((x: string) => x.trim()).filter(Boolean);
+                    return (
+                      <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {items.map((item: string, idx: number) => (
+                          <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.5' }}>
+                            <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>✓</span>
+                            <span>{item}。</span>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1227,12 +1228,26 @@ ${dinner}
                     <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>03</span>
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
-                  <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.7', textAlign: 'justify' }}>
-                    活动时间为2026年9月3日全天，地点成都，总人数约500人。<br />
-                    <span style={{ color: '#2563eb', fontWeight: 'bold' }}>上午 9:00-12:00</span>，<span style={{ color: '#2563eb', fontWeight: 'bold' }}>12:00-13:30</span> 自助餐交流，<br />
-                    下午 <span style={{ color: '#2563eb', fontWeight: 'bold' }}>13:30-17:30</span>，间隙插入共<span style={{ color: '#2563eb', fontWeight: 'bold' }}>90分钟</span>热场活动和问题解答，<span style={{ color: '#2563eb', fontWeight: 'bold' }}>18:00-20:00</span> AIAA晚餐，自愿AA报名，每人<span style={{ color: '#2563eb', fontWeight: 'bold' }}>198元</span>，约30人，主要针对企业主。<br />
-                    现场若挂飞书名，不做直接商业售卖。
-                  </p>
+                  {(() => {
+                    const rawText = bootstrapConfig.infoConfig?.投入资源与边界 || "活动时间为2026年9月3日全天，地点成都，总人数约500人。上午 9:00-12:00，12:00-13:30 自助餐交流，下午 13:30-17:30，间隙插入共90分钟热场活动和问题解答，18:00-20:00 AIAA晚餐，自愿AA报名，每人198元，约30人，主要针对企业主。现场若挂飞书名，不做直接商业售卖。";
+                    
+                    let formattedText = rawText;
+                    const highlightKeywords = [
+                      "上午 9:00-12:00", "12:00-13:30", "下午 13:30-17:30", "90分钟", "18:00-20:00", "198元", "30人", "500人",
+                      "上午9:00-12:00", "下午13:30-17:30"
+                    ];
+                    highlightKeywords.forEach(kw => {
+                      const regex = new RegExp(kw, 'g');
+                      formattedText = formattedText.replace(regex, `<span style="color: #2563eb; font-weight: bold;">${kw}</span>`);
+                    });
+                    
+                    return (
+                      <p 
+                        style={{ margin: 0, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.7', textAlign: 'justify' }}
+                        dangerouslySetInnerHTML={{ __html: formattedText.replace(/\n/g, '<br />') }}
+                      />
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1247,18 +1262,19 @@ ${dinner}
                     <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', fontFamily: 'monospace' }}>04</span>
                   </div>
                   <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                    {[
-                      "AI企业管理", "飞书效率", "实战分享", "效率先锋决赛", 
-                      "企业主", "商机转化", "客户信息收集", "互动热场", 
-                      "问题解答", "AIAA晚餐", "字节跳动高级分享", "合规", 
-                      "成都", "500人"
-                    ].map((kw, kwIdx) => (
-                      <span key={kwIdx} style={{ background: 'var(--accent)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.82rem', color: 'var(--foreground)' }}>
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
+                  {(() => {
+                    const keywordsText = bootstrapConfig.infoConfig?.智能策划偏好 || "AI企业管理,飞书效率,实战分享,效率先锋决赛,企业主,商机转化,客户信息收集,互动热场,问题解答,AIAA晚餐,字节跳动高级分享,合规,成都,500人";
+                    const tags = keywordsText.split(/[,，]/).map((x: string) => x.trim()).filter(Boolean);
+                    return (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                        {tags.map((kw: string, kwIdx: number) => (
+                          <span key={kwIdx} style={{ background: 'var(--accent)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.82rem', color: 'var(--foreground)' }}>
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
