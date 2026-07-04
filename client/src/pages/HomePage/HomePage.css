@@ -523,6 +523,14 @@
   .schedule-panel {
     box-shadow: none;
   }
+
+  .schedule-panel h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    border-left: 3px solid var(--teal);
+    padding-left: 8px;
+    margin-bottom: 18px;
+  }
   
   .timeline {
     display: grid;

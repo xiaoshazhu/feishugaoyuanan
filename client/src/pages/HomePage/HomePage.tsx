@@ -995,7 +995,7 @@ ${dinner}
                 </div>
               </article>
               <article className="panel schedule-panel">
-                <h2>当天流程</h2>
+                <h2>大会日程</h2>
                 <ol className="timeline">
                   {bootstrapConfig.flow && bootstrapConfig.flow.length > 0 ? (
                     [...bootstrapConfig.flow]
@@ -2053,7 +2053,7 @@ ${dinner}
           <span>Vite + NestJS + 飞书多维表格引擎驱动</span>
         </div>
         <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.3)' }}>
-          © 2026 高原安 & 字节跳动 & 海科科技 联合发起. 版权所有
+          © 2026 西藏高原安生物科技开发有限公司版权所有
         </p>
       </footer>
 
