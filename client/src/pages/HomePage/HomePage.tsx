@@ -1638,6 +1638,7 @@ ${dinner}
                   return (
                     <div 
                       key={idx} 
+                      className="sponsor-card"
                       style={{ 
                         background: theme.bg, 
                         borderLeft: `4px solid ${theme.border}`, 
@@ -1985,6 +1986,31 @@ ${dinner}
 
 
       </main>
+
+      {/* 高端企业级 Footer 版权与共创说明栏 - 稳固底部留白 */}
+      <footer style={{ 
+        textAlign: 'center', 
+        padding: '36px 20px', 
+        background: 'var(--ink, #14211f)', 
+        color: 'rgba(255, 255, 255, 0.45)', 
+        fontSize: '0.85rem', 
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+        marginTop: '64px',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ color: '#ffd987', fontWeight: 'bold', letterSpacing: '0.5px' }}>💡 高原安AI效率先锋汇智箱</span>
+          <span style={{ opacity: 0.3 }}>|</span>
+          <span>Vite + NestJS + 飞书多维表格引擎驱动</span>
+        </div>
+        <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.3)' }}>
+          © 2026 高原安 & 字节跳动 & 海科科技 联合发起. 版权所有
+        </p>
+      </footer>
 
       {/* 全局 Toast 通知弹窗 */}
       {toast.visible && (

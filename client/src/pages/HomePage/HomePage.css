@@ -974,12 +974,34 @@
   transform: translateY(0) scale(0.98);
 }
 
-/* 积分榜卡片悬浮浮起与高档阴影动效 */
-.leader-row-card {
+/* ==========================================================================
+   🎨 核心卡片模块的高端鼠标悬浮起浮与光晕动效
+   ========================================================================== */
+
+/* 让卡片本身支持平滑的三维过渡 */
+.gaoyuanan-app .mission-band,
+.gaoyuanan-app .panel,
+.gaoyuanan-app .idea-card,
+.gaoyuanan-app .roadmap article,
+.gaoyuanan-app .leader-row-card,
+.gaoyuanan-app .intent-card-v2,
+.gaoyuanan-app .gift-card,
+.gaoyuanan-app .theme-grid article,
+.gaoyuanan-app .sponsor-card {
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-.leader-row-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
+/* 悬浮时的状态：向上浮起 4px，阴影自然加深，边框微显墨绿质感 */
+.gaoyuanan-app .mission-band:hover,
+.gaoyuanan-app .panel:hover,
+.gaoyuanan-app .idea-card:hover,
+.gaoyuanan-app .roadmap article:hover,
+.gaoyuanan-app .leader-row-card:hover,
+.gaoyuanan-app .intent-card-v2:hover,
+.gaoyuanan-app .gift-card:hover,
+.gaoyuanan-app .theme-grid article:hover,
+.gaoyuanan-app .sponsor-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 16px 36px rgba(15, 42, 38, 0.12) !important;
+  border-color: rgba(18, 105, 95, 0.25) !important;
 }
