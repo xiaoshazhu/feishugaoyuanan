@@ -142,8 +142,15 @@ export class HuizhiController {
    * 功能描述：发起 AI 智能润色请求，向“点子优化多维表格”写入基础数据
    */
   @Post('ideas/polish')
-  async polishIdea(@Body() body: { description: string }) {
-    const record = await this.huizhiService.createPolishRecord(body.description);
+  async polishIdea(
+    @Body() body: { 
+      title: string; 
+      category: string; 
+      content: string; 
+      phase: string; 
+    }
+  ) {
+    const record = await this.huizhiService.createPolishRecord(body);
     return { success: true, recordId: record?.record_id };
   }
 }

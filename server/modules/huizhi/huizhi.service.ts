@@ -631,15 +631,23 @@ export class HuizhiService {
   /**
    * 功能描述：向“点子优化多维表格” (tbldaBH4Gpq2MKtm) 添加一条润色记录
    */
-  async createPolishRecord(description: string): Promise<any> {
+  async createPolishRecord(body: {
+    title: string;
+    category: string;
+    content: string;
+    phase: string;
+  }): Promise<any> {
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN || 'PY4Ib9Pohaxkn3st42mcbveTnVb';
     const tableId = 'tbldaBH4Gpq2MKtm';
     
-    this.logger.log(`正在写入点子优化多维表格: ${tableId}, 描述字数: ${description ? description.length : 0}`);
+    this.logger.log(`正在写入点子优化多维表格: ${tableId}, 标题: ${body.title || ''}`);
     
     try {
       const fields = {
-        '基础描述': description
+        '建议标题': body.title || '',
+        '建议分类': body.category || '',
+        '具体内容': body.content || '',
+        '可落地时间段': body.phase || ''
       };
       const result = await this.feishuService.createRecord(appToken, tableId, fields);
       return result;

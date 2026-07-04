@@ -648,9 +648,11 @@ ${dinner}
   };
 
   const handleAIPolish = async () => {
-    const text = newIdea.content.trim();
-    if (!text) {
-      showToast("请先填写具体内容再进行 AI 润色哦！", "info");
+    const title = newIdea.title.trim();
+    const content = newIdea.content.trim();
+    
+    if (!title || !content) {
+      showToast("请先填写建议标题和具体内容再进行 AI 润色哦！", "info");
       return;
     }
 
@@ -662,7 +664,12 @@ ${dinner}
       await axiosForBackend({
         url: "/api/huizhi/ideas/polish",
         method: "POST",
-        data: { description: text }
+        data: {
+          title,
+          category: newIdea.category,
+          content,
+          phase: newIdea.phase
+        }
       });
       showToast("🚀 已将点子提交至 AI 润色，请等待云端计算回传...", "info");
     } catch (error) {
