@@ -194,6 +194,9 @@ export default function HomePage() {
   const [unvotedIds, setUnvotedIds] = useState<string[]>([]);
   const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
   const [showOnlyTop10, setShowOnlyTop10] = useState(true);
+  const [isPolishing, setIsPolishing] = useState(false);
+  const [polishResult, setPolishResult] = useState("");
+  const [showPolishPanel, setShowPolishPanel] = useState(false);
 
   // 新增：共创人员登录/实名登记状态
   const [userInfo, setUserInfo] = useState<{ name: string; department: string } | null>(() => {
@@ -336,6 +339,38 @@ export default function HomePage() {
   useEffect(() => {
     refreshAllData();
   }, [refreshAllData]);
+
+  // 新增：监听 AI 润色的 SSE 实时数据推送通道
+  useEffect(() => {
+    const sseUrl = "/api/huizhi/sse/polish";
+    console.log("正在与 AI 润色 SSE 通道建立连接:", sseUrl);
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        const text = parsed?.text;
+        console.log("收到 AI 润色 SSE 推送数据:", text);
+        if (text) {
+          setPolishResult(text);
+          setIsPolishing(false);
+          setShowPolishPanel(true);
+          showToast("✨ AI 润色已完成！", "success");
+        }
+      } catch (e) {
+        console.error("解析 AI 润色推送数据失败:", e);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.warn("AI 润色 SSE 通道连接异常，系统将尝试自动重连...", error);
+    };
+
+    return () => {
+      console.log("正在断开 AI 润色 SSE 通道连接");
+      eventSource.close();
+    };
+  }, [showToast]);
 
   // Sync hash to activeView
   useEffect(() => {
@@ -610,6 +645,31 @@ ${dinner}
       console.error("Failed to add comment:", err);
       showToast("发表评论失败", "info");
     });
+  };
+
+  const handleAIPolish = async () => {
+    const text = newIdea.content.trim();
+    if (!text) {
+      showToast("请先填写具体内容再进行 AI 润色哦！", "info");
+      return;
+    }
+
+    setIsPolishing(true);
+    setPolishResult("");
+    setShowPolishPanel(false);
+
+    try {
+      await axiosForBackend({
+        url: "/api/huizhi/ideas/polish",
+        method: "POST",
+        data: { description: text }
+      });
+      showToast("🚀 已将点子提交至 AI 润色，请等待云端计算回传...", "info");
+    } catch (error) {
+      console.error("AI 润色请求失败:", error);
+      showToast("AI 润色请求失败，请稍后重试", "info");
+      setIsPolishing(false);
+    }
   };
 
   const handleIdeaSubmit = (e: React.FormEvent) => {
@@ -1107,8 +1167,51 @@ ${dinner}
                     ))}
                   </select>
                 </label>
-                <label>
-                  具体内容
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }}>具体内容</span>
+                    <button
+                      type="button"
+                      onClick={handleAIPolish}
+                      disabled={isPolishing}
+                      style={{
+                        background: isPolishing ? '#e2e8f0' : 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+                        color: isPolishing ? '#64748b' : '#ffffff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '0.78rem',
+                        fontWeight: 'bold',
+                        cursor: isPolishing ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: isPolishing ? 'none' : '0 2px 8px rgba(59, 130, 246, 0.25)',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isPolishing) {
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.35)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isPolishing) {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.25)';
+                        }
+                      }}
+                    >
+                      {isPolishing ? (
+                        <>
+                          <span className="spinner-mini" style={{ width: '12px', height: '12px' }}></span>
+                          正在润色中...
+                        </>
+                      ) : (
+                        '✨ AI 智能润色'
+                      )}
+                    </button>
+                  </div>
                   <textarea
                     id="content"
                     required
@@ -1116,8 +1219,122 @@ ${dinner}
                     placeholder="可以写一个小建议，也可以写完整策划。建议包含：场景、做法、需要资源、预期效果。"
                     value={newIdea.content}
                     onChange={(e) => setNewIdea((prev) => ({ ...prev, content: e.target.value }))}
+                    style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--border)', padding: '12px', fontSize: '0.9rem', lineHeight: '1.6' }}
                   />
-                </label>
+
+                  {/* 等待回传加载态 */}
+                  {isPolishing && (
+                    <div style={{ 
+                      padding: '16px', 
+                      background: 'rgba(241, 245, 249, 0.5)', 
+                      borderRadius: '8px', 
+                      border: '1px dashed #cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginTop: '8px'
+                    }}>
+                      <span className="spinner-mini" style={{ border: '2px solid rgba(59, 130, 246, 0.3)', borderTopColor: '#3b82f6', width: '16px', height: '16px' }}></span>
+                      <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: '500' }}>
+                        飞书 AI/DeepSeek 正在为您精心打磨点子，请耐心等候...
+                      </span>
+                    </div>
+                  )}
+
+                  {/* AI 润色建议对比展示面板 */}
+                  {showPolishPanel && (
+                    <div style={{
+                      marginTop: '12px',
+                      background: 'rgba(240, 253, 250, 0.85)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid #99f6e4',
+                      borderRadius: '10px',
+                      padding: '16px',
+                      boxShadow: '0 4px 20px rgba(13, 148, 136, 0.08)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      animation: 'fadeIn 0.3s ease'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ 
+                          fontSize: '0.72rem', 
+                          fontWeight: 'bold', 
+                          color: '#0d9488', 
+                          background: '#ccfbf1', 
+                          padding: '2px 8px', 
+                          borderRadius: '12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          ✨ AI 润色成果
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          支持一键覆盖您的输入内容
+                        </span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.88rem', 
+                        color: '#111827', 
+                        lineHeight: '1.6', 
+                        whiteSpace: 'pre-wrap', 
+                        background: '#ffffff', 
+                        padding: '12px', 
+                        borderRadius: '6px', 
+                        border: '1px solid #e2e8f0',
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                      }}>
+                        {polishResult || '生成失败，请重新润色'}
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowPolishPanel(false);
+                            setPolishResult("");
+                          }}
+                          style={{
+                            background: '#f1f5f9',
+                            color: '#475569',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 14px',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          不采纳
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewIdea((prev) => ({ ...prev, content: polishResult }));
+                            setShowPolishPanel(false);
+                            setPolishResult("");
+                            showToast("🎉 已采纳 AI 润色方案，原内容已被替换！");
+                          }}
+                          disabled={!polishResult}
+                          style={{
+                            background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 14px',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(13, 148, 136, 0.25)'
+                          }}
+                        >
+                          采纳AI润色
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <label>
                   可落地时间段
                   <select

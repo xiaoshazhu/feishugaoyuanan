@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
+import { Subject, Observable } from 'rxjs';
 import { FeishuService } from '../feishu/feishu.service';
 
 export interface Idea {
@@ -51,6 +52,7 @@ const seedIdeas: Idea[] = [
 export class HuizhiService {
   private readonly logger = new Logger(HuizhiService.name);
   private memoryIdeas: Idea[] = [...seedIdeas];
+  private readonly polishEvent$ = new Subject<{ text: string }>();
 
   constructor(private readonly feishuService: FeishuService) {}
 
@@ -608,6 +610,42 @@ export class HuizhiService {
     } catch (error) {
       this.logger.error('注册人员失败', error.message);
       return false;
+    }
+  }
+
+  /**
+   * 功能描述：接收 Webhook 推送的 AI 润色结果，并分发至客户端
+   */
+  triggerPolishWebhook(datas: string) {
+    this.logger.log(`Webhook 触发 AI 润色就绪，收到数据长度: ${datas ? datas.length : 0}`);
+    this.polishEvent$.next({ text: datas || '' });
+  }
+
+  /**
+   * 功能描述：获取 AI 润色的实时推送流
+   */
+  getPolishSseStream(): Observable<{ text: string }> {
+    return this.polishEvent$.asObservable();
+  }
+
+  /**
+   * 功能描述：向“点子优化多维表格” (tbldaBH4Gpq2MKtm) 添加一条润色记录
+   */
+  async createPolishRecord(description: string): Promise<any> {
+    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN || 'PY4Ib9Pohaxkn3st42mcbveTnVb';
+    const tableId = 'tbldaBH4Gpq2MKtm';
+    
+    this.logger.log(`正在写入点子优化多维表格: ${tableId}, 描述字数: ${description ? description.length : 0}`);
+    
+    try {
+      const fields = {
+        '基础描述': description
+      };
+      const result = await this.feishuService.createRecord(appToken, tableId, fields);
+      return result;
+    } catch (error) {
+      this.logger.error('写入点子优化多维表格失败', error.message);
+      throw error;
     }
   }
 }

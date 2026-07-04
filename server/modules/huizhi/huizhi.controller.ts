@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Put, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, Sse, MessageEvent } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { HuizhiService } from './huizhi.service';
 
 /**
@@ -111,5 +113,37 @@ export class HuizhiController {
   async registerMember(@Body() body: { name: string; department: string }) {
     const success = await this.huizhiService.registerMember(body);
     return { success };
+  }
+
+  /**
+   * 功能描述：飞书云端 Webhook 回调，告知 AI 润色方案已就绪
+   */
+  @Post('webhook/shortcut-ready')
+  async webhookShortcutReady(
+    @Body() body: any,
+    @Query('datas') queryDatas?: string,
+  ) {
+    const text = queryDatas || body.datas || body.text || '';
+    this.huizhiService.triggerPolishWebhook(text);
+    return { success: true };
+  }
+
+  /**
+   * 功能描述：前端 SSE 实时长连接通道，用于接收 AI 润色结果广播
+   */
+  @Sse('sse/polish')
+  ssePolish(): Observable<MessageEvent> {
+    return this.huizhiService.getPolishSseStream().pipe(
+      map(data => ({ data } as MessageEvent))
+    );
+  }
+
+  /**
+   * 功能描述：发起 AI 智能润色请求，向“点子优化多维表格”写入基础数据
+   */
+  @Post('ideas/polish')
+  async polishIdea(@Body() body: { description: string }) {
+    const record = await this.huizhiService.createPolishRecord(body.description);
+    return { success: true, recordId: record?.record_id };
   }
 }
