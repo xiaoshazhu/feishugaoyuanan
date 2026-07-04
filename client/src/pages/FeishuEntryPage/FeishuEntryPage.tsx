@@ -9,7 +9,7 @@ export default function FeishuEntryPage() {
         <section className="entry-hero">
           <div className="entry-copy">
             <span className="mini-label">飞书入口</span>
-            <h1>高原安A效率先锋汇智箱</h1>
+            <h1>高原安AI效率先锋汇智箱</h1>
             <p>
               欢迎从飞书进入活动共创空间。你可以投放建议、点赞评论、查看共创排行榜；公开征集营销推广、精品案例、互动体验、嘉宾邀请、客户转化与AIAA晚餐等共创建议。
             </p>
@@ -63,7 +63,7 @@ export default function FeishuEntryPage() {
           </div>
           <ul>
             <li>
-              <strong>飞书群公告标题：</strong>高原安A效率先锋汇智箱开放征集
+              <strong>飞书群公告标题：</strong>高原安AI效率先锋汇智箱开放征集
             </li>
             <li>
               <strong>按钮文案：</strong>投放我的活动建议

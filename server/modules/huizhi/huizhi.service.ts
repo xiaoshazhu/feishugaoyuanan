@@ -70,7 +70,7 @@ export class HuizhiService {
   async getBootstrap() {
     if (!this.isFeishuConfigured()) {
       return {
-        projectName: '高原安A效率先锋汇智箱',
+        projectName: '高原安AI效率先锋汇智箱',
         uploadTarget: '飞书妙搭',
         stage: 'template-aligned',
         modules: ['点子广场', '投放想法', '积分榜'],
@@ -105,7 +105,7 @@ export class HuizhiService {
       ]);
 
       return {
-        projectName: '高原安A效率先锋汇智箱',
+        projectName: '高原安AI效率先锋汇智箱',
         uploadTarget: '飞书妙搭',
         stage: 'template-aligned',
         modules: ['点子广场', '投放想法', '积分榜'],
@@ -120,7 +120,7 @@ export class HuizhiService {
     } catch (error) {
       this.logger.error('获取飞书多维表格初始配置失败，降级使用空配置', error.message);
       return {
-        projectName: '高原安A效率先锋汇智箱',
+        projectName: '高原安AI效率先锋汇智箱',
         uploadTarget: '飞书妙搭',
         stage: 'template-aligned',
         modules: ['点子广场', '投放想法', '积分榜'],

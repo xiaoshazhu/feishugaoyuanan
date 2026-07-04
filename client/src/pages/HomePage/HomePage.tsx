@@ -512,7 +512,7 @@ export default function HomePage() {
           ? "欢迎合作伙伴围绕案例展示、客户邀约、现场互动和传播资源提出建议。"
           : "请内部筹备成员围绕活动内容、现场执行、客户转化和AIAA晚餐积极共创。";
 
-    return `各位好，高原安A效率先锋汇智箱已开放。
+    return `各位好，高原安AI效率先锋汇智箱已开放。
 
 ${audienceLine}
 
@@ -876,10 +876,10 @@ ${dinner}
   return (
     <div className="gaoyuanan-app">
       <header className="hero">
-        <img src="/assets/hero-huizhi-box.png" alt="高原安A效率先锋汇智箱活动视觉" />
+        <img src="/assets/hero-huizhi-box.png" alt="高原安AI效率先锋汇智箱活动视觉" />
         <div className="hero-shade"></div>
         <nav className="topbar" aria-label="主导航">
-          <strong>高原安A效率先锋汇智箱</strong>
+          <strong>高原安AI效率先锋汇智箱</strong>
           <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button className={`ghost small ${activeView === 'ideas' ? 'active' : ''}`} onClick={() => changeView("ideas")}>点子广场</button>
             <button className={`ghost small ${activeView === 'info' ? 'active' : ''}`} onClick={() => changeView("info")}>活动信息</button>
