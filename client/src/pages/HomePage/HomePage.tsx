@@ -1019,12 +1019,57 @@ ${dinner}
             </div>
             <div className="theme-grid">
               {bootstrapConfig.templates && bootstrapConfig.templates.length > 0 ? (
-                bootstrapConfig.templates.map((item: any, idx: number) => (
-                  <article key={idx}>
-                    <h3>{item.案例标题}</h3>
-                    <p>{item.案例描述}</p>
-                  </article>
-                ))
+                bootstrapConfig.templates.map((item: any, idx: number) => {
+                  let linkUrl = "";
+                  let linkText = "查看案例详情";
+                  if (item.案例链接) {
+                    let rawVal = "";
+                    let rawText = "";
+                    if (typeof item.案例链接 === 'string') {
+                      rawVal = item.案例链接.trim();
+                    } else if (Array.isArray(item.案例链接) && item.案例链接.length > 0) {
+                      rawVal = (item.案例链接[0].link || "").trim();
+                      rawText = (item.案例链接[0].text || "").trim();
+                      if (!rawVal) rawVal = rawText;
+                    } else if (typeof item.案例链接 === 'object') {
+                      rawVal = (item.案例链接.link || "").trim();
+                      rawText = (item.案例链接.text || "").trim();
+                      if (!rawVal) rawVal = rawText;
+                    }
+
+                    // 判定是否具备合法网址的特征（带有 .点号分段，或 http 开头，或包含 feishu 等）
+                    if (rawVal && (rawVal.includes(".") || rawVal.startsWith("http") || rawVal.includes("feishu"))) {
+                      linkUrl = rawVal;
+                      // 如果缺少协议头，智能补充 https:// 前缀，保证浏览器能成功跳转公网
+                      if (!/^https?:\/\//i.test(linkUrl)) {
+                        linkUrl = "https://" + linkUrl;
+                      }
+                      if (rawText && rawText !== rawVal) {
+                        linkText = rawText;
+                      }
+                    }
+                  }
+
+                  return (
+                    <article 
+                      key={idx}
+                      style={{ cursor: linkUrl ? 'pointer' : 'default', display: 'flex', flexDirection: 'column' }}
+                      onClick={() => {
+                        if (linkUrl) {
+                          window.open(linkUrl, '_blank');
+                        }
+                      }}
+                    >
+                      <h3>{item.案例标题}</h3>
+                      <p>{item.案例描述}</p>
+                      {linkUrl && (
+                        <div style={{ marginTop: 'auto', paddingTop: '12px', fontSize: '0.8rem', color: 'var(--teal, #12695f)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          ✨ {linkText} →
+                        </div>
+                      )}
+                    </article>
+                  );
+                })
               ) : (
                 <>
                   <article><h3>AI运用于企业管理的实战分享</h3><p>展示真实企业管理场景中AI提效、降本、增收的实践方法。</p></article>
