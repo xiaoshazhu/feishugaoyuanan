@@ -45,6 +45,48 @@ const seedIdeas: Idea[] = [
     fullPlan: false,
     comments: ["市场组: 可以和报名表字段打通。", "技术组: 也适合给主持人口播引用。"],
     createdAt: "2026-06-26T15:00:00.000Z"
+  },
+  {
+    id: "idea-002",
+    author: "技术组",
+    role: "案例负责人",
+    title: "案例展示统一用真实业务前后对比",
+    category: "精品案例",
+    phase: "方案定稿前",
+    content: "每个案例只讲三个画面：痛点、飞书/AI改造动作、效率结果。避免讲产品堆功能，让企业老板能一眼看到价值。",
+    votes: 25,
+    adoptedPoints: 4,
+    fullPlan: true,
+    comments: ["销售组: 建议每个案例控制在8分钟。"],
+    createdAt: "2026-06-26T15:20:00.000Z"
+  },
+  {
+    id: "idea-003",
+    author: "销售组",
+    role: "商机推进",
+    title: "AIAA晚餐设置行业圆桌座位卡",
+    category: "AIAA晚餐",
+    phase: "会后转化期",
+    content: "晚餐不做硬销售，按行业和数字化痛点分桌，每桌放一张问题卡，由高原安同事引导客户互相交流。",
+    votes: 12,
+    adoptedPoints: 2,
+    fullPlan: false,
+    comments: [],
+    createdAt: "2026-06-26T16:00:00.000Z"
+  },
+  {
+    id: "idea-004",
+    author: "品牌组",
+    role: "宣发",
+    title: "小红书和抖音预热做效率挑战短视频",
+    category: "宣传推广",
+    phase: "预热宣传期",
+    content: "用30秒短视频展示一个AI工具让会议纪要、任务拆解、客户跟进提速，结尾引导报名线下分享大会。",
+    votes: 9,
+    adoptedPoints: 1,
+    fullPlan: false,
+    comments: ["品牌组: 注意不包装成独立产品。"],
+    createdAt: "2026-06-26T16:08:00.000Z"
   }
 ];
 
@@ -68,20 +110,59 @@ export class HuizhiService {
    * 功能描述：获取项目初始引导数据和多维表格中的静态配置信息
    */
   async getBootstrap() {
+    const fallbackData = {
+      projectName: '高原安AI效率先锋汇智箱',
+      uploadTarget: '飞书妙搭',
+      stage: 'template-aligned',
+      modules: ['点子广场', '投放想法', '积分榜'],
+      basicInfo: {
+        活动主题: 'AI运用于企业管理的实战分享暨飞书效率先锋决赛',
+        时间: '2026年9月3日全天',
+        城市: '成都',
+        规模估计: '500',
+        AIAA晚餐企业主席位: '30',
+        '元/人自愿AA': '198',
+        活动地点: '成都',
+        活动描述: '面向企业主、高管、企业二代与数字化转型核心人员，围绕AI时代企业管理、飞书效率实践、案例决赛对决和未来设想展开全天活动。'
+      },
+      flow: [
+        { 时间段: "09:00-12:00", 流程安排: "上午主论坛：AI与企业管理实战分享、飞书效率先锋展示。" },
+        { 时间段: "12:00-13:30", 流程安排: "自助餐与交流，承接上午内容并促进商机互动。" },
+        { 时间段: "13:30-17:30", 流程安排: "下午决赛与专题分享，中间插入共90分钟热场活动和问题解答。" },
+        { 时间段: "18:00-20:00", 流程安排: "AIAA晚餐，自愿AA制报名，每人198元，主要面向30位企业主深度交流。" }
+      ],
+      templates: [
+        { 案例标题: "AI运用于企业管理的实战分享", 案例描述: "展示真实企业管理场景中AI提效、降本、增收的实践方法。", 案例链接: "https://ycnafmezb6nu.feishu.cn/base/PY4Ib9Pohaxkn3st42mcbveTnVb?table=tblPF3M3a35SxaoN&view=vew1TiFIYE" },
+        { 案例标题: "飞书效率先锋决赛对决", 案例描述: "用轻比赛、重展示呈现内部精品案例和业务改造成果。", 案例链接: "https://ycnafmezb6nu.feishu.cn/base/PY4Ib9Pohaxkn3st42mcbveTnVb?table=tblPF3M3a35SxaoN&view=vew1TiFIYE" },
+        { 案例标题: "AI时代企业管理经验交流", 案例描述: "让企业主围绕组织、流程、绩效、销售和客户经营展开交流。", 案例链接: "https://ycnafmezb6nu.feishu.cn/base/PY4Ib9Pohaxkn3st42mcbveTnVb?table=tblPF3M3a35SxaoN&view=vew1TiFIYE" },
+        { 案例标题: "飞书应用未来与设想", 案例描述: "邀请字节跳动高级分享，讨论飞书应用于现代企业管理的未来方向。", 案例链接: "https://ycnafmezb6nu.feishu.cn/base/PY4Ib9Pohaxkn3st42mcbveTnVb?table=tblPF3M3a35SxaoN&view=vew1TiFIYE" }
+      ],
+      awards: [
+        { 奖品名称: "活动伴手礼", 所需积分: "30", 礼品个数: "100" },
+        { 奖品名称: "定制纪念杯", 所需积分: "60", 礼品个数: "50" },
+        { 奖品名称: "AI效率工具会员/晚餐交流", 所需积分: "100", 礼品个数: "10" }
+      ],
+      rules: [
+        { 积分规则: "提交想法", 分数变动: "1" },
+        { 积分规则: "被点赞", 分数变动: "0.2" },
+        { 积分规则: "采纳点", 分数变动: "5" },
+        { 积分规则: "完整策划被采用", 分数变动: "20" }
+      ],
+      infoConfig: {
+        主办方核心目的: "高原安、字节跳动、海科科技共同发起，打造一场面向约500位企业核心人员的AI效率先锋活动，展示AI和飞书在企业管理中的实战价值，提升行业影响力并促进高质量商机转化。",
+        希望达成的效果: "让企业主看见真实案例、愿意交流、愿意留下需求；让飞书效率先锋决赛形成传播亮点；让AIAA晚餐承接30位企业主深度交流；最终沉淀一份可执行、可传播、可复盘的总策划。",
+        投入资源与边界: "活动时间为2026年9月3日全天，地点成都，总人数约500人。上午 9:00-12:00，12:00-13:30 自助餐交流，下午 13:30-17:30，间隙插入共90分钟热场活动和问题解答，18:00-20:00 AIAA晚餐，自愿AA报名，每人198元，约30人，主要针对企业主。现场若挂飞书名，不做直接商业售卖。",
+        智能策划偏好: "AI企业管理,飞书效率,实战分享,效率先锋决赛,企业主,商机转化,客户信息收集,互动热场,问题解答,AIAA晚餐,字节跳动高级分享,合规,成都,500人"
+      },
+      sponsors: [
+        { 企业名称: "高原安", 企业职责: "总发起、客户经营、企业管理实战案例、AIAA晚餐转化。" },
+        { 企业名称: "字节跳动", 企业职责: "飞书站台、高级分享、数字化应用未来设想、原厂背书。" },
+        { 企业名称: "海科科技", 企业职责: "活动策划执行、客户邀约、现场互动、内容包装与传播。" }
+      ]
+    };
+
     if (!this.isFeishuConfigured()) {
-      return {
-        projectName: '高原安AI效率先锋汇智箱',
-        uploadTarget: '飞书妙搭',
-        stage: 'template-aligned',
-        modules: ['点子广场', '投放想法', '积分榜'],
-        basicInfo: null,
-        flow: [],
-        templates: [],
-        awards: [],
-        rules: [],
-        infoConfig: null,
-        sponsors: []
-      };
+      return fallbackData;
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
@@ -109,29 +190,17 @@ export class HuizhiService {
         uploadTarget: '飞书妙搭',
         stage: 'template-aligned',
         modules: ['点子广场', '投放想法', '积分榜'],
-        basicInfo: basicInfoRecords[0]?.fields || null,
-        flow: flowRecords.map(r => r.fields),
-        templates: templatesRecords.map(r => r.fields),
-        awards: awardsRecords.map(r => r.fields),
-        rules: rulesRecords.map(r => r.fields),
-        infoConfig: infoConfigRecords[0]?.fields || null,
-        sponsors: sponsorsRecords.map(r => r.fields)
+        basicInfo: basicInfoRecords[0]?.fields || fallbackData.basicInfo,
+        flow: flowRecords.length > 0 ? flowRecords.map(r => r.fields) : fallbackData.flow,
+        templates: templatesRecords.length > 0 ? templatesRecords.map(r => r.fields) : fallbackData.templates,
+        awards: awardsRecords.length > 0 ? awardsRecords.map(r => r.fields) : fallbackData.awards,
+        rules: rulesRecords.length > 0 ? rulesRecords.map(r => r.fields) : fallbackData.rules,
+        infoConfig: infoConfigRecords[0]?.fields || fallbackData.infoConfig,
+        sponsors: sponsorsRecords.length > 0 ? sponsorsRecords.map(r => r.fields) : fallbackData.sponsors
       };
     } catch (error) {
       this.logger.error('获取飞书多维表格初始配置失败，降级使用空配置', error.message);
-      return {
-        projectName: '高原安AI效率先锋汇智箱',
-        uploadTarget: '飞书妙搭',
-        stage: 'template-aligned',
-        modules: ['点子广场', '投放想法', '积分榜'],
-        basicInfo: null,
-        flow: [],
-        templates: [],
-        awards: [],
-        rules: [],
-        infoConfig: null,
-        sponsors: []
-      };
+      return fallbackData;
     }
   }
 

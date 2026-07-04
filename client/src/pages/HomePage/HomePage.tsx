@@ -876,7 +876,7 @@ ${dinner}
   return (
     <div className="gaoyuanan-app">
       <header className="hero">
-        <img src="/assets/hero-huizhi-box.png" alt="高原安AI效率先锋汇智箱活动视觉" />
+        <img src={`${import.meta.env.BASE_URL || '/'}assets/hero-huizhi-box.png`} alt="高原安AI效率先锋汇智箱活动视觉" />
         <div className="hero-shade"></div>
         <nav className="topbar" aria-label="主导航">
           <strong>高原安AI效率先锋汇智箱</strong>
