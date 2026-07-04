@@ -656,5 +656,27 @@ export class HuizhiService {
       throw error;
     }
   }
+
+  /**
+   * 功能描述：主动查询多维表格中某条润色记录的 AI 结果 (方案 B 轮询兜底)
+   */
+  async getPolishStatus(recordId: string): Promise<{ ready: boolean; text: string }> {
+    const appToken = process.env.FEISHU_BITABLE_APP_TOKEN || 'PY4Ib9Pohaxkn3st42mcbveTnVb';
+    const tableId = 'tbldaBH4Gpq2MKtm';
+    try {
+      const record = await this.feishuService.getRecord(appToken, tableId, recordId);
+      const fields = record?.fields || {};
+      
+      // 兼容可能存在的列名
+      const aiText = fields['AI捷径生成方案'] || fields['AI润色成果'] || fields['datas'] || fields['润色结果'] || '';
+      return {
+        ready: !!aiText,
+        text: String(aiText)
+      };
+    } catch (error) {
+      this.logger.error(`查询润色状态失败: ${recordId}`, error.message);
+      return { ready: false, text: '' };
+    }
+  }
 }
 

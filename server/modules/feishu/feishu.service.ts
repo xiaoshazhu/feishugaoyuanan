@@ -96,6 +96,36 @@ export class FeishuService {
   }
 
   /**
+   * 功能描述：获取单条多维表格（Bitable）数据表中的记录
+   * @param appToken {string} 多维表格唯一标识 token
+   * @param tableId {string} 数据表 ID
+   * @param recordId {string} 记录 ID
+   * @return {Promise<any>} 包含记录信息的对象，失败返回 null
+   */
+  async getRecord(appToken: string, tableId: string, recordId: string): Promise<any> {
+    try {
+      const token = await this.getTenantAccessToken();
+      const url = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records/${recordId}`;
+      
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data?.code === 0) {
+        return response.data.data?.record || null;
+      } else {
+        this.logger.warn(`读取单条记录错误: ${response.data?.msg || '未知错误'} (码: ${response.data?.code})`);
+        return null;
+      }
+    } catch (error) {
+      this.logger.error(`读取单条多维表格记录失败: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
    * 功能描述：向多维表格中新增一条记录
    * @param appToken {string} 多维表格唯一标识 token (必填)
    * @param tableId {string} 数据表 ID (必填)

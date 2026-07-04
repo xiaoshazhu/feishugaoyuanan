@@ -153,4 +153,13 @@ export class HuizhiController {
     const record = await this.huizhiService.createPolishRecord(body);
     return { success: true, recordId: record?.record_id };
   }
+
+  /**
+   * 功能描述：主动查询多维表格中某条润色记录的 AI 结果 (方案 B 轮询兜底)
+   */
+  @Get('ideas/polish-status/:recordId')
+  async getPolishStatus(@Param('recordId') recordId: string) {
+    const result = await this.huizhiService.getPolishStatus(recordId);
+    return result;
+  }
 }

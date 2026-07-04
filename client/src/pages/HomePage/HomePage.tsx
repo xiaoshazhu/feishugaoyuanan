@@ -661,7 +661,7 @@ ${dinner}
     setShowPolishPanel(false);
 
     try {
-      await axiosForBackend({
+      const res = await axiosForBackend({
         url: "/api/huizhi/ideas/polish",
         method: "POST",
         data: {
@@ -671,7 +671,47 @@ ${dinner}
           phase: newIdea.phase
         }
       });
+      const recordId = res.data?.recordId;
       showToast("🚀 已将点子提交至 AI 润色，请等待云端计算回传...", "info");
+
+      if (recordId) {
+        let attempts = 0;
+        const maxAttempts = 15;
+        const checkTimer = setInterval(async () => {
+          attempts++;
+          if (attempts > maxAttempts) {
+            clearInterval(checkTimer);
+            setIsPolishing((prevPolishing) => {
+              if (prevPolishing) {
+                showToast("⏰ AI 润色超时，请确认多维表格 AI 插件已启用并配置了 Webhook 自动化规则", "info");
+              }
+              return false;
+            });
+            return;
+          }
+
+          try {
+            const statusRes = await axiosForBackend({
+              url: `/api/huizhi/ideas/polish-status/${recordId}`,
+              method: "GET"
+            });
+            if (statusRes.data?.ready) {
+              clearInterval(checkTimer);
+              setPolishResult((prevText) => {
+                if (!prevText) {
+                  setPolishResult(statusRes.data.text);
+                  setIsPolishing(false);
+                  setShowPolishPanel(true);
+                  showToast("✨ AI 润色已完成！", "success");
+                }
+                return prevText || statusRes.data.text;
+              });
+            }
+          } catch (err) {
+            console.error("轮询状态失败:", err);
+          }
+        }, 3000);
+      }
     } catch (error) {
       console.error("AI 润色请求失败:", error);
       showToast("AI 润色请求失败，请稍后重试", "info");
