@@ -668,7 +668,7 @@ export class HuizhiService {
       const fields = record?.fields || {};
       
       // 兼容可能存在的列名
-      const aiText = fields['AI捷径生成方案'] || fields['AI润色成果'] || fields['datas'] || fields['润色结果'] || '';
+      const aiText = fields['AI润色描述'] || fields['AI捷径生成方案'] || fields['AI润色成果'] || fields['datas'] || fields['润色结果'] || '';
       return {
         ready: !!aiText,
         text: String(aiText)
