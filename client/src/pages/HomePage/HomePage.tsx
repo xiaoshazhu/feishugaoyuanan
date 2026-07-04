@@ -3,7 +3,7 @@ import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBac
 import './HomePage.css';
 
 const STORAGE_KEY = "gaoyuan-ai-huizhi-box-v1";
-const validViews = ["ideas", "info", "submit", "publish", "leaderboard"];
+const validViews = ["feishu", "info", "intent", "ideas", "submit", "leaderboard"];
 
 const categories = [
   "活动定位",
@@ -156,7 +156,7 @@ export default function HomePage() {
     }
   });
 
-  const [activeView, setActiveView] = useState("ideas");
+  const [activeView, setActiveView] = useState("feishu");
   const [categoryFilter, setCategoryFilter] = useState("全部");
   const [sortMode, setSortMode] = useState("hot");
 
@@ -372,12 +372,25 @@ export default function HomePage() {
     };
   }, [showToast]);
 
-  // Sync hash to activeView
+  // Sync hash to activeView with smooth scrolling
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
       if (validViews.includes(hash)) {
         setActiveView(hash);
+        // 延迟等页面全部渲染完成后滚动
+        setTimeout(() => {
+          const targetId = `view-${hash}`;
+          const el = document.getElementById(targetId);
+          if (el) {
+            const elementPosition = el.getBoundingClientRect().top + window.scrollY;
+            const offsetPosition = elementPosition - 100;
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: "smooth"
+            });
+          }
+        }, 100);
       }
     };
     handleHashChange();
@@ -388,6 +401,17 @@ export default function HomePage() {
   const changeView = (view: string) => {
     setActiveView(view);
     window.history.replaceState(null, "", `#${view}`);
+
+    const targetId = `view-${view}`;
+    const el = document.getElementById(targetId);
+    if (el) {
+      const elementPosition = el.getBoundingClientRect().top + window.scrollY;
+      const offsetPosition = elementPosition - 100;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
   };
 
   // Helper calculation functions
@@ -918,7 +942,7 @@ ${dinner}
           </div>
         </section>
 
-        <section className="feishu-band">
+        <section id="view-feishu" className="feishu-band">
           <div>
             <span className="mini-label">飞书参与入口</span>
             <h2>从飞书群、工作台或多维表格进入汇智箱</h2>
@@ -934,17 +958,17 @@ ${dinner}
           </a>
         </section>
 
-        <section className="tabs" aria-label="视图切换">
-          <button className={`tab ${activeView === 'ideas' ? 'active' : ''}`} onClick={() => changeView("ideas")}>点子广场</button>
+        <section className="tabs" aria-label="视图切换" style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)', padding: '12px 0', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <button className={`tab ${activeView === 'feishu' ? 'active' : ''}`} onClick={() => changeView("feishu")}>飞书入口</button>
           <button className={`tab ${activeView === 'info' ? 'active' : ''}`} onClick={() => changeView("info")}>活动信息</button>
           <button className={`tab ${activeView === 'intent' ? 'active' : ''}`} onClick={() => changeView("intent")}>发起人想法</button>
+          <button className={`tab ${activeView === 'ideas' ? 'active' : ''}`} onClick={() => changeView("ideas")}>点子广场</button>
           <button className={`tab ${activeView === 'submit' ? 'active' : ''}`} onClick={() => changeView("submit")}>投放想法</button>
           <button className={`tab ${activeView === 'leaderboard' ? 'active' : ''}`} onClick={() => changeView("leaderboard")}>积分榜</button>
         </section>
 
         {/* View: info */}
-        {activeView === "info" && (
-          <section id="view-info" className="view active">
+        <section id="view-info" className="view active" style={{ display: 'block', marginBottom: '40px' }}>
             <div className="section-head">
               <div>
                 <h2>活动基本信息</h2>
@@ -1009,12 +1033,188 @@ ${dinner}
 
 
           </section>
-        )}
+
+        {/* View: intent (发起人想法) */}
+        <section id="view-intent" className="view active" style={{ display: 'block', marginBottom: '40px' }}>
+            <div className="section-head" style={{ borderBottom: 'none', paddingBottom: '0px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #3b82f6', paddingLeft: '12px', margin: 0, fontSize: '1.8rem', fontWeight: 'bold' }}>
+                  发起人想法
+                </h2>
+                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.95rem' }}>
+                  由{(() => {
+                    const sponsors = bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0
+                      ? bootstrapConfig.sponsors.map((x: any) => x.企业名称).join('、')
+                      : "高原安、字节跳动、海科科技";
+                    return sponsors;
+                  })()}共同发起，所有投稿和智能策划都围绕这里的目标自动匹配。
+                </p>
+              </div>
+            </div>
+
+            {/* 共同发起企业职责专属渐变色条卡片组 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+              {(() => {
+                const themeMap: { [key: string]: { bg: string, border: string, text: string } } = {
+                  "高原安": {
+                    bg: "linear-gradient(135deg, #f0fdf4 0%, #e6f9ed 100%)",
+                    border: "#10b981",
+                    text: "#065f46"
+                  },
+                  "字节跳动": {
+                    bg: "linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%)",
+                    border: "#3b82f6",
+                    text: "#1e40af"
+                  },
+                  "海科科技": {
+                    bg: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+                    border: "#f59e0b",
+                    text: "#92400e"
+                  }
+                };
+
+                const defaultTheme = {
+                  bg: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+                  border: "#64748b",
+                  text: "#334155"
+                };
+
+                const getTheme = (name: string) => {
+                  return themeMap[name] || defaultTheme;
+                };
+
+                return (bootstrapConfig.sponsors || []).map((sp: any, idx: number) => {
+                  const theme = getTheme(sp.企业名称);
+                  return (
+                    <div 
+                      key={idx}
+                      style={{
+                        background: theme.bg,
+                        borderLeft: `5px solid ${theme.border}`,
+                        borderRadius: '12px',
+                        padding: '20px 24px',
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.015)',
+                        transition: 'transform 0.2s',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}
+                    >
+                      <strong style={{ fontSize: '1rem', color: theme.text }}>{sp.企业名称}</strong>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.5' }}>{sp.企业描述}</span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* 2x2 网格卡片布局 */}
+            <div className="intent-grid-v2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px', marginBottom: '24px' }}>
+              
+              {/* 卡片 01: 主办方核心目的 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  🎯
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>01: 主办方核心目的</h3>
+                  </div>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.6' }}>
+                    {bootstrapConfig.infoConfig?.主办方核心目的 || 
+                      "围绕“高原安AI效率先锋分享大会”，征集营销推广、精品案例、互动体验、嘉宾邀请、客户转化、AIAA晚餐等建议。"}
+                  </p>
+                </div>
+              </div>
+
+              {/* 卡片 02: 希望达成的效果 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  ✨
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>02: 希望达成的效果</h3>
+                  </div>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  {(() => {
+                    const effectsText = bootstrapConfig.infoConfig?.希望达成的效果 || "提升品牌知名度;促成B端用户转化;收集500个以上客户信息;晚餐会有30位企业主参与深度交流";
+                    const list = effectsText.split(/[;；\n]/).map((x: string) => x.trim()).filter(Boolean);
+                    return (
+                      <ul style={{ paddingLeft: '16px', margin: 0, fontSize: '0.9rem', color: 'var(--muted)', lineHeight: '1.7' }}>
+                        {list.map((item: string, idx: number) => (
+                          <li key={idx} style={{ marginBottom: '6px' }}>✓ {item}</li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* 卡片 03: 投入资源与边界 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  💎
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>03: 投入资源与边界</h3>
+                  </div>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  {(() => {
+                    const text = bootstrapConfig.infoConfig?.投入资源与边界 || "预算有限，主论坛以飞书展示为主，晚餐会需要收取 198元/人 报名费，确保合规，只在成都本地进行推广。";
+                    let formattedText = text;
+                    const highlightKeywords = [
+                      "预算有限", "198元", "30人", "500人",
+                      "成都本地", "成都"
+                    ];
+                    highlightKeywords.forEach(kw => {
+                      const regex = new RegExp(kw, 'g');
+                      formattedText = formattedText.replace(regex, `<span style="color: #2563eb; font-weight: bold;">${kw}</span>`);
+                    });
+                    
+                    return (
+                      <p 
+                        style={{ margin: 0, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: '1.7', textAlign: 'justify' }}
+                        dangerouslySetInnerHTML={{ __html: formattedText.replace(/\n/g, '<br />') }}
+                      />
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* 卡片 04: 智能策划偏好关键词 */}
+              <div className="intent-card-v2" style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)', display: 'flex', gap: '24px', position: 'relative', border: '1px solid var(--border)' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.4rem' }}>
+                  🔍
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--foreground)' }}>04: 智能策划偏好</h3>
+                  </div>
+                  <div style={{ width: '32px', height: '2px', background: '#3b82f6', marginBottom: '16px' }}></div>
+                  {(() => {
+                    const keywordsText = bootstrapConfig.infoConfig?.智能策划偏好 || "AI企业管理,飞书效率,实战分享,效率先锋决赛,企业主,商机转化,客户信息收集,互动热场,问题解答,AIAA晚餐,字节跳动高级分享,合规,成都,500人";
+                    const tags = keywordsText.split(/[,，]/).map((x: string) => x.trim()).filter(Boolean);
+                    return (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                        {tags.map((kw: string, kwIdx: number) => (
+                          <span key={kwIdx} style={{ background: 'var(--accent)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.82rem', color: 'var(--foreground)' }}>
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </section>
 
 
         {/* View: ideas */}
-        {activeView === "ideas" && (
-          <section id="view-ideas" className="view active">
+        <section id="view-ideas" className="view active" style={{ display: 'block', marginBottom: '40px' }}>
             <div className="section-head">
               <div>
                 <h2>点子广场</h2>
@@ -1175,11 +1375,9 @@ ${dinner}
               })}
             </div>
           </section>
-        )}
 
         {/* View: submit */}
-        {activeView === "submit" && (
-          <section id="view-submit" className="view active">
+        <section id="view-submit" className="view active" style={{ display: 'block', marginBottom: '40px' }}>
             <div className="form-layout">
               <form id="ideaForm" className="panel" onSubmit={handleIdeaSubmit}>
                 <h2>投放你的想法</h2>
@@ -1540,23 +1738,7 @@ ${dinner}
               </aside>
             </div>
           </section>
-        )}
 
-        {/* View: intent (发起人想法) */}
-        {activeView === "intent" && (
-          <section id="view-intent" className="view active">
-            <div className="section-head" style={{ borderBottom: 'none', paddingBottom: '0px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #3b82f6', paddingLeft: '12px', margin: 0, fontSize: '1.8rem', fontWeight: 'bold' }}>
-                  发起人想法
-                </h2>
-                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.95rem' }}>
-                  由{(() => {
-                    const sponsors = bootstrapConfig.sponsors && bootstrapConfig.sponsors.length > 0
-                      ? bootstrapConfig.sponsors.map((x: any) => x.企业名称).join('、')
-                      : "高原安、字节跳动、海科科技";
-                    return sponsors;
-                  })()}共同发起，所有投稿和智能策划都围绕这里的目标自动匹配。
                 </p>
               </div>
             </div>
@@ -1738,11 +1920,9 @@ ${dinner}
               </div>
             </div>
           </section>
-        )}
 
         {/* View: leaderboard */}
-        {activeView === "leaderboard" && (
-          <section id="view-leaderboard" className="view active">
+        <section id="view-leaderboard" className="view active" style={{ display: 'block', marginBottom: '40px' }}>
             <div className="section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
               <div>
                 <h2>积分榜</h2>
@@ -1950,7 +2130,6 @@ ${dinner}
               )}
             </div>
           </section>
-        )}
 
 
       </main>
