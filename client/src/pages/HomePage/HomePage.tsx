@@ -864,6 +864,55 @@ ${dinner}
     return `${startTimeStr}-${endTimeStr}`;
   };
 
+  const handleAddCalendarEvent = (summary: string, startTimeVal: any, endTimeVal: any) => {
+    try {
+      let startSec = 0;
+      let endSec = 0;
+
+      // 获取大会基础日期 YYYY-MM-DD
+      let dateBase = "2026-09-03";
+      if (bootstrapConfig.basicInfo?.活动时间) {
+        const d = new Date(bootstrapConfig.basicInfo.活动时间);
+        if (!isNaN(d.getTime())) {
+          const pad = (n: number) => String(n).padStart(2, '0');
+          dateBase = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        }
+      }
+
+      // 1. 如果传进来的是时分字符串 (如 "09:00", "12:00")
+      if (typeof startTimeVal === 'string' && startTimeVal.includes(':') && !startTimeVal.includes('T')) {
+        const startStr = `${dateBase}T${startTimeVal}:00`;
+        const endStr = `${dateBase}T${endTimeVal || startTimeVal}:00`;
+        startSec = Math.floor(new Date(startStr).getTime() / 1000);
+        endSec = Math.floor(new Date(endStr).getTime() / 1000);
+      } else {
+        // 2. 如果传进来的是时间戳或可直接实例化的 Date 对象
+        const startMs = new Date(startTimeVal).getTime();
+        const endMs = endTimeVal ? new Date(endTimeVal).getTime() : startMs;
+        
+        if (!isNaN(startMs)) {
+          startSec = Math.floor(startMs / 1000);
+        }
+        if (!isNaN(endMs)) {
+          endSec = Math.floor(endMs / 1000);
+        }
+      }
+
+      if (!startSec || !endSec || isNaN(startSec) || isNaN(endSec)) {
+        // 降级兜底
+        const dDefault = new Date("2026-09-03T09:00:00").getTime();
+        const dEnd = new Date("2026-09-03T20:00:00").getTime();
+        startSec = Math.floor(dDefault / 1000);
+        endSec = Math.floor(dEnd / 1000);
+      }
+
+      const applinkUrl = `https://applink.feishu.cn/client/calendar/event/create?summary=${encodeURIComponent(summary)}&startTime=${startSec}&endTime=${endSec}`;
+      window.open(applinkUrl, '_blank');
+    } catch (e) {
+      console.error("Failed to add calendar event", e);
+    }
+  };
+
   // Handle individual comment UI toggles
   const [commentViewToggle, setCommentViewToggle] = useState<Record<string, boolean>>({});
   const toggleCommentSection = (id: string) => {
@@ -995,23 +1044,99 @@ ${dinner}
                 </div>
               </article>
               <article className="panel schedule-panel">
-                <h2>大会日程</h2>
+                <div className="schedule-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h2 style={{ margin: 0 }}>大会日程</h2>
+                  <button 
+                    type="button" 
+                    className="add-calendar-btn"
+                    onClick={() => {
+                      const hostTitle = bootstrapConfig.basicInfo?.活动主题 || "高原安AI效率先锋分享大会";
+                      handleAddCalendarEvent(`【日程】${hostTitle}`, "09:00", "20:00");
+                    }}
+                  >
+                    🗓️ 添加到飞书日历
+                  </button>
+                </div>
                 <ol className="timeline">
                   {bootstrapConfig.flow && bootstrapConfig.flow.length > 0 ? (
                     [...bootstrapConfig.flow]
                       .sort((a: any, b: any) => (a.流程开始时间 || 0) - (b.流程开始时间 || 0))
                       .map((item: any, idx: number) => (
-                        <li key={idx}>
-                          <strong>{formatTimeRange(item.流程开始时间, item.流程结束时间)}</strong>
-                          <span>{item.流程描述}</span>
+                        <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <strong>{formatTimeRange(item.流程开始时间, item.流程结束时间)}</strong>
+                            <span>{item.流程描述}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="timeline-calendar-btn"
+                            title="添加到日程"
+                            onClick={() => {
+                              handleAddCalendarEvent(`【日程】${item.流程描述} - 高原安AI效率大会`, item.流程开始时间, item.流程结束时间);
+                            }}
+                          >
+                            📅
+                          </button>
                         </li>
                       ))
                   ) : (
                     <>
-                      <li><strong>09:00-12:00</strong><span>上午主论坛：AI与企业管理实战分享、飞书效率先锋展示。</span></li>
-                      <li><strong>12:00-13:30</strong><span>自助餐与交流，承接上午内容并促进商机互动。</span></li>
-                      <li><strong>13:30-17:30</strong><span>下午决赛与专题分享，中间插入共90分钟热场活动和问题解答。</span></li>
-                      <li><strong>18:00-20:00</strong><span>AIAA晚餐，会中自愿AA制报名，每人198元，主要针对30位企业主深度交流。</span></li>
+                      <li style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong>09:00-12:00</strong>
+                          <span>上午主论坛：AI与企业管理实战分享、飞书效率先锋展示。</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="timeline-calendar-btn"
+                          title="添加到日程"
+                          onClick={() => handleAddCalendarEvent("【日程】上午主论坛 - 高原安AI效率大会", "09:00", "12:00")}
+                        >
+                          📅
+                        </button>
+                      </li>
+                      <li style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong>12:00-13:30</strong>
+                          <span>自助餐与交流，承接上午内容并促进商机互动。</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="timeline-calendar-btn"
+                          title="添加到日程"
+                          onClick={() => handleAddCalendarEvent("【日程】自助餐与交流 - 高原安AI效率大会", "12:00", "13:30")}
+                        >
+                          📅
+                        </button>
+                      </li>
+                      <li style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong>13:30-17:30</strong>
+                          <span>下午决赛与专题分享，中间插入共90分钟热场活动和问题解答。</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="timeline-calendar-btn"
+                          title="添加到日程"
+                          onClick={() => handleAddCalendarEvent("【日程】下午决赛与专题分享 - 高原安AI效率大会", "13:30", "17:30")}
+                        >
+                          📅
+                        </button>
+                      </li>
+                      <li style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong>18:00-20:00</strong>
+                          <span>AIAA晚餐，会中自愿AA制报名，每人198元，主要针对30位企业主深度交流。</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="timeline-calendar-btn"
+                          title="添加到日程"
+                          onClick={() => handleAddCalendarEvent("【日程】AIAA晚餐 - 高原安AI效率大会", "18:00", "20:00")}
+                        >
+                          📅
+                        </button>
+                      </li>
                     </>
                   )}
                 </ol>
