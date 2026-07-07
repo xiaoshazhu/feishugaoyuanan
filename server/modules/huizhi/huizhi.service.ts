@@ -16,6 +16,7 @@ export interface Idea {
   fullPlan: boolean;
   comments: string[];
   createdAt: string;
+  interactions?: any[];
 }
 
 const TABLES = {
@@ -44,6 +45,7 @@ const seedIdeas: Idea[] = [
     adoptedPoints: 3,
     fullPlan: false,
     comments: ["市场组: 可以和报名表字段打通。", "技术组: 也适合给主持人口播引用。"],
+    interactions: [],
     createdAt: "2026-06-26T15:00:00.000Z"
   },
   {
@@ -58,6 +60,7 @@ const seedIdeas: Idea[] = [
     adoptedPoints: 4,
     fullPlan: true,
     comments: ["销售组: 建议每个案例控制在8分钟。"],
+    interactions: [],
     createdAt: "2026-06-26T15:20:00.000Z"
   },
   {
@@ -72,6 +75,7 @@ const seedIdeas: Idea[] = [
     adoptedPoints: 2,
     fullPlan: false,
     comments: [],
+    interactions: [],
     createdAt: "2026-06-26T16:00:00.000Z"
   },
   {
@@ -86,6 +90,7 @@ const seedIdeas: Idea[] = [
     adoptedPoints: 1,
     fullPlan: false,
     comments: ["品牌组: 注意不包装成独立产品。"],
+    interactions: [],
     createdAt: "2026-06-26T16:08:00.000Z"
   }
 ];
@@ -435,22 +440,43 @@ export class HuizhiService {
    * 功能描述：点赞与取消点赞切换（写入或更新互动中心）
    */
   async voteIdea(id: string, author?: string, department?: string): Promise<{ success: boolean; action: 'vote' | 'unvote' }> {
+    const voterName = (author || '匿名').trim();
+    const deptVal = (department || '').trim();
+
     if (!this.isFeishuConfigured()) {
       const idx = this.memoryIdeas.findIndex((x) => x.id === id);
       if (idx !== -1) {
-        if (this.memoryIdeas[idx].votes > 0) {
-          this.memoryIdeas[idx].votes -= 1;
-          return { success: true, action: 'unvote' };
+        if (!this.memoryIdeas[idx].interactions) {
+          this.memoryIdeas[idx].interactions = [];
         }
-        this.memoryIdeas[idx].votes += 1;
-        return { success: true, action: 'vote' };
+        
+        const existingVoteIdx = this.memoryIdeas[idx].interactions.findIndex(
+          (x) => x.user === voterName && x.role === deptVal && x.type === "点赞"
+        );
+
+        if (existingVoteIdx !== -1) {
+          // 找到已有点赞 -> 取消点赞
+          this.memoryIdeas[idx].votes = Math.max(0, this.memoryIdeas[idx].votes - 1);
+          this.memoryIdeas[idx].interactions.splice(existingVoteIdx, 1);
+          return { success: true, action: 'unvote' };
+        } else {
+          // 未点赞 -> 添加点赞
+          this.memoryIdeas[idx].votes += 1;
+          this.memoryIdeas[idx].interactions.push({
+            id: `temp-vote-${Date.now()}-${Math.random()}`,
+            user: voterName,
+            type: '点赞',
+            content: '',
+            role: deptVal,
+            createdAt: new Date().toISOString()
+          } as any);
+          return { success: true, action: 'vote' };
+        }
       }
       return { success: false, action: 'vote' };
     }
 
     const appToken = process.env.FEISHU_BITABLE_APP_TOKEN!;
-    const voterName = author || '匿名';
-    const deptVal = department || '';
 
     try {
       const rulesRecords = await this.feishuService.getRecords(appToken, TABLES.rules);
@@ -463,8 +489,8 @@ export class HuizhiService {
       const existingActiveVote = records.find((record) => {
         const fields = record.fields;
         const op = fields['操作'];
-        const user = String(fields['用户'] || '');
-        const role = String(fields['所属单位'] || '');
+        const user = String(fields['用户'] || '').trim();
+        const role = String(fields['所属单位'] || '').trim();
         const isDeleted = fields['是否删除'];
         
         const rawLink = fields['关联点子'];

@@ -947,6 +947,8 @@ ${dinner}
                     setUserInfo(null);
                     setRegName("");
                     setRegDept("");
+                    setVotedIds([]);
+                    setUnvotedIds([]);
                     setNewIdea((prev) => ({ ...prev, author: "", role: "" }));
                   }}
                   style={{
