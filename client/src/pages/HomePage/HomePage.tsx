@@ -563,8 +563,10 @@ ${dinner}
       return;
     }
     
-    // 判定是否已经点过赞
-    const hasVoted = targetIdea.interactions?.some(x => x.user === authorName && x.type === "点赞");
+    // 判定是否已经点过赞 (强匹配姓名 + 所属单位)
+    const hasVoted = targetIdea.interactions?.some(
+      x => x.user === authorName && (x.role === deptName || !x.role || !deptName) && x.type === "点赞"
+    );
 
     // 1. 触发 Q弹动效 (已点赞则触发收缩动画，未点赞则触发膨胀动画)
     if (hasVoted) {
@@ -588,13 +590,13 @@ ${dinner}
           if (hasVoted) {
             newVotes = Math.max(0, idea.votes - 1);
             newInteractions = (idea.interactions || []).filter(
-              x => !(x.user === authorName && x.type === "点赞")
+              x => !(x.user === authorName && (x.role === deptName || !x.role || !deptName) && x.type === "点赞")
             );
           } else {
             newVotes = idea.votes + 1;
             newInteractions = [
               ...(idea.interactions || []),
-              { id: `temp-vote-${Date.now()}-${Math.random()}`, user: authorName, type: "点赞", content: "" }
+              { id: `temp-vote-${Date.now()}-${Math.random()}`, user: authorName, type: "点赞", content: "", role: deptName }
             ];
           }
           return {
@@ -1307,7 +1309,10 @@ ${dinner}
                     <div className="card-actions">
                       {(() => {
                         const authorName = userInfo?.name || "匿名";
-                        const hasVoted = idea.interactions?.some((x: any) => x.user === authorName && x.type === "点赞");
+                        const authorDept = userInfo?.department || "";
+                        const hasVoted = idea.interactions?.some((x: any) => 
+                          x.user === authorName && (x.role === authorDept || !x.role || !authorDept) && x.type === "点赞"
+                        );
                         const isProcessing = votingIds.includes(idea.id);
                         
                         return (

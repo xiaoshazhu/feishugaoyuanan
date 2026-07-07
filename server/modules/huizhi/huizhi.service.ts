@@ -279,12 +279,14 @@ export class HuizhiService {
           const uName = String(x.fields['用户'] || '匿名');
           const op = String(x.fields['操作'] || '');
           const content = String(x.fields['评论内容'] || '').trim();
+          const dept = String(x.fields['所属单位'] || '');
 
           return {
             id: x.record_id,
             user: uName,
             type: op,
-            content: content
+            content: content,
+            role: dept
           };
         });
 
